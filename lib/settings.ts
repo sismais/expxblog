@@ -10,6 +10,7 @@ export interface ThemeColors {
 }
 
 export interface DesignSystem {
+  font_display: string
   font_sans: string
   font_serif: string
   font_mono: string
@@ -37,6 +38,7 @@ export interface DesignSystem {
 }
 
 export const DEFAULT_DESIGN_SYSTEM: DesignSystem = {
+  font_display: 'Poppins, system-ui, sans-serif',
   font_sans: 'Inter, system-ui, sans-serif',
   font_serif: '"Source Serif 4", Georgia, serif',
   font_mono: '"JetBrains Mono", monospace',

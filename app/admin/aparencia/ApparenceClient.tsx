@@ -618,6 +618,7 @@ export function ApparenceClient({ initial }: Props) {
         <h2 className="text-lg font-semibold text-neutral-900 mb-4">Tipografia</h2>
         <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
           {([
+            { key: 'font_display' as const, label: 'Fonte dos títulos', placeholder: 'Poppins, system-ui, sans-serif' },
             { key: 'font_sans' as const, label: 'Fonte principal (sans-serif)', placeholder: 'Inter, system-ui, sans-serif' },
             { key: 'font_serif' as const, label: 'Fonte de títulos (serif)', placeholder: '"Source Serif 4", Georgia, serif' },
             { key: 'font_mono' as const, label: 'Fonte de código (mono)', placeholder: '"JetBrains Mono", monospace' },

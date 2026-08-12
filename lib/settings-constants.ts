@@ -2,6 +2,7 @@
 import type { DesignSystem } from './settings'
 
 export const DEFAULT_DESIGN_SYSTEM: DesignSystem = {
+  font_display: 'Poppins, system-ui, sans-serif',
   font_sans: 'Inter, system-ui, sans-serif',
   font_serif: '"Source Serif 4", Georgia, serif',
   font_mono: '"JetBrains Mono", monospace',

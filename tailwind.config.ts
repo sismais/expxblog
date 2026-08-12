@@ -22,6 +22,7 @@ const config: Config = {
         },
       },
       fontFamily: {
+        display: ['Poppins', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
         serif: ['"Source Serif 4"', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'monospace'],

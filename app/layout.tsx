@@ -31,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     `--color-secondary-light:${lightenHex(colors.secondary)};` +
     `--color-bg:${colors.background};` +
     `--color-surface:${colors.surface};` +
+    `--font-display:${design_system.font_display};` +
     `--font-sans:${design_system.font_sans};` +
     `--font-serif:${design_system.font_serif};` +
     `--font-mono:${design_system.font_mono};` +

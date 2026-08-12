@@ -68,6 +68,7 @@ const putSchema = z.object({
     .optional(),
   design_system: z
     .object({
+      font_display: z.string().max(200).optional(),
       font_sans: z.string().max(200).optional(),
       font_serif: z.string().max(200).optional(),
       font_mono: z.string().max(200).optional(),
