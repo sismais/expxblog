@@ -21,11 +21,14 @@ const config: Config = {
           900: '#1A1A2E',
         },
       },
+      // As famílias apontam para as CSS vars que o app/layout.tsx injeta a partir
+      // de site_settings.design_system. O valor literal fica só como fallback,
+      // para o caso das vars não existirem (ex.: página renderizada sem banco).
       fontFamily: {
-        display: ['Poppins', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        serif: ['"Source Serif 4"', 'Georgia', 'serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        display: ['var(--font-display)', 'Poppins', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', '"Source Serif 4"', 'Georgia', 'serif'],
+        mono: ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
       },
     },
   },

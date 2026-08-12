@@ -6,7 +6,9 @@ import { HeroPost } from '@/components/blog/HeroPost'
 import { EditorialGrid } from '@/components/blog/EditorialGrid'
 import { Pagination } from '@/components/ui/Pagination'
 import { getSettings } from '@/lib/settings'
+import { getAppUrl } from '@/lib/app-url'
 import { getPostsPage, getAllCategories } from '@/lib/db-queries'
+import { PostCardFeatured } from '@/components/blog/PostCardFeatured'
 import { FeaturedSection } from '@/components/blog/FeaturedSection'
 import { PostCardBusiness } from '@/components/blog/PostCardBusiness'
 import { CategorySection } from '@/components/blog/CategorySection'
@@ -20,9 +22,23 @@ import { eq, desc, and, asc } from 'drizzle-orm'
 export async function generateMetadata(): Promise<Metadata> {
   const { company } = await getSettings()
   const blogName = company.blog_name || process.env.NEXT_PUBLIC_BLOG_NAME || 'Blog'
+  const description = company.blog_description || ''
+  const url = getAppUrl()
+
   return {
-    title: 'Home',
-    description: `${company.blog_description || 'Tecnologia, gestão e inovação para empresas'} — ${blogName}`,
+    // `absolute` evita virar "Home | Nome do Blog" na página inicial.
+    title: { absolute: blogName },
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: blogName,
+      description,
+      url,
+      siteName: blogName,
+      type: 'website',
+      locale: 'pt_BR',
+    },
+    twitter: { card: 'summary_large_image', title: blogName, description },
   }
 }
 
@@ -116,7 +132,7 @@ export default async function HomePage({
 }: {
   searchParams: { page?: string; category?: string; tag?: string }
 }) {
-  const { template } = await getSettings()
+  const { template, company } = await getSettings()
 
   const pageLimit =
     template === 'portal' ? '13' :
@@ -262,10 +278,26 @@ export default async function HomePage({
     )
   }
 
+  // O destaque só aparece na primeira página sem filtro: dentro de um filtro ou
+  // na página 2 em diante, promover um artigo confunde mais do que ajuda.
+  const isUnfilteredFirstPage =
+    postsData.page === 1 && !searchParams.category && !searchParams.tag
+  const [featuredPost, ...restPosts] = postsData.posts
+  const showFeatured = isUnfilteredFirstPage && Boolean(featuredPost)
+  const gridPosts = showFeatured ? restPosts : postsData.posts
+
+  const blogName = company.blog_name || process.env.NEXT_PUBLIC_BLOG_NAME || 'Blog'
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-neutral-900 mb-2 font-serif">Blog</h1>
-      <p className="text-gray-500 mb-8">Tecnologia, gestão e inovação para empresas</p>
+      <div className="mb-8 max-w-2xl">
+        <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
+          {blogName}
+        </h1>
+        {company.blog_description && (
+          <p className="text-gray-600 leading-relaxed">{company.blog_description}</p>
+        )}
+      </div>
 
       <Suspense>
         <CategoryFilter
@@ -274,9 +306,31 @@ export default async function HomePage({
         />
       </Suspense>
 
-      <div className="mt-6">
-        <PostGrid posts={postsData.posts} />
-      </div>
+      {showFeatured && (
+        <div className="mt-6">
+          <PostCardFeatured post={featuredPost} />
+        </div>
+      )}
+
+      {gridPosts.length > 0 && (
+        <div className="mt-8">
+          {showFeatured && (
+            <div className="flex items-center gap-3 mb-6">
+              <h2 className="font-display text-lg font-bold text-neutral-900 whitespace-nowrap">
+                Mais artigos
+              </h2>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+          )}
+          <PostGrid posts={gridPosts} />
+        </div>
+      )}
+
+      {!showFeatured && gridPosts.length === 0 && (
+        <div className="mt-6">
+          <PostGrid posts={gridPosts} />
+        </div>
+      )}
 
       <Suspense>
         <Pagination currentPage={postsData.page} totalPages={postsData.pages} />

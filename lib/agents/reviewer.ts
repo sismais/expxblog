@@ -1,7 +1,7 @@
 // lib/agents/reviewer.ts
 import { callOpenRouter } from '@/lib/ai'
 import { getAgentConfig } from '@/lib/agent-configs'
-import { AgentContext, AgentResult } from '@/lib/agents/types'
+import { AgentContext, AgentResult, GEO_REVIEW_CRITERIA } from '@/lib/agents/types'
 
 export const MAX_REVIEW_CYCLES = 3
 
@@ -15,7 +15,9 @@ export async function runReviewerAgent(
 
   const config = await getAgentConfig('reviewer')
 
-  const plainText = ctx.articleContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 32000)
+  // Envia o HTML (e não o texto puro) porque os critérios de estrutura dependem
+  // de enxergar h2, listas, tabelas e links de fonte.
+  const articleHtml = ctx.articleContent.replace(/\s+/g, ' ').trim().slice(0, 32000)
 
   const resp = await callOpenRouter(
     {
@@ -25,11 +27,13 @@ export async function runReviewerAgent(
         { role: 'system', content: config.prompt },
         {
           role: 'user',
-          content: `Título: ${ctx.articleTitle ?? ''}\n\nConteúdo:\n${plainText}`,
+          content: `Título: ${ctx.articleTitle ?? ''}\n\n${GEO_REVIEW_CRITERIA}\n\nConteúdo (HTML):\n${articleHtml}`,
         },
       ],
       temperature: 0.2,
-      max_tokens: 600,
+      // lista de issues ficou maior com os critérios de estrutura; JSON truncado
+      // cai no catch e aprova sem revisar, por isso a folga
+      max_tokens: 900,
     },
     apiKey
   )

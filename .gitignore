@@ -58,3 +58,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.vercel
+
+# Estado das skills de automacao (nao versionar)
+.claude/auto-state.json
+.claude/auto-handoff-*.md
+.claude/.ralph-loop.local.md

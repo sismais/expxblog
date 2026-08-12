@@ -1,6 +1,6 @@
 import { db } from '@/drizzle/db'
 import { posts, postCategories, categories, tags, postTags } from '@/drizzle/schema'
-import { eq, and, asc, desc, count, inArray, sql } from 'drizzle-orm'
+import { eq, and, asc, desc, count, inArray, notInArray, sql } from 'drizzle-orm'
 
 export async function getPostsPage(params: {
   page?: string | number
@@ -133,5 +133,73 @@ export async function getAllCategories() {
     return await db.select().from(categories).orderBy(asc(categories.name))
   } catch {
     return []
+  }
+}
+
+/**
+ * Artigos relacionados: mesmos assuntos primeiro, completando com os mais
+ * recentes quando não há relacionados suficientes.
+ */
+export async function getRelatedPosts(params: {
+  postId: number
+  categoryIds: number[]
+  limit?: number
+}) {
+  const limit = params.limit ?? 3
+  try {
+    let related: typeof posts.$inferSelect[] = []
+
+    if (params.categoryIds.length > 0) {
+      const rels = await db
+        .select({ post_id: postCategories.post_id })
+        .from(postCategories)
+        .where(inArray(postCategories.category_id, params.categoryIds))
+
+      const candidateIds = Array.from(new Set(rels.map((r) => r.post_id))).filter(
+        (id) => id !== params.postId
+      )
+
+      if (candidateIds.length > 0) {
+        related = await db
+          .select()
+          .from(posts)
+          .where(and(eq(posts.status, 'published'), inArray(posts.id, candidateIds)))
+          .orderBy(desc(posts.published_at))
+          .limit(limit)
+      }
+    }
+
+    if (related.length < limit) {
+      const excludeIds = [params.postId, ...related.map((p) => p.id)]
+      const fillers = await db
+        .select()
+        .from(posts)
+        .where(and(eq(posts.status, 'published'), notInArray(posts.id, excludeIds)))
+        .orderBy(desc(posts.published_at))
+        .limit(limit - related.length)
+      related = [...related, ...fillers]
+    }
+
+    return related
+  } catch {
+    return []
+  }
+}
+
+/** Slugs e datas para montar o sitemap. */
+export async function getSitemapData() {
+  try {
+    const [postRows, categoryRows, tagRows] = await Promise.all([
+      db
+        .select({ slug: posts.slug, updated_at: posts.updated_at, published_at: posts.published_at })
+        .from(posts)
+        .where(eq(posts.status, 'published'))
+        .orderBy(desc(posts.published_at)),
+      db.select({ slug: categories.slug }).from(categories),
+      db.select({ slug: tags.slug }).from(tags),
+    ])
+    return { posts: postRows, categories: categoryRows, tags: tagRows }
+  } catch {
+    return { posts: [], categories: [], tags: [] }
   }
 }

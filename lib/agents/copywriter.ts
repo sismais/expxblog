@@ -2,7 +2,7 @@
 import { callOpenRouter } from '@/lib/ai'
 import { getAgentConfig } from '@/lib/agent-configs'
 import { getArticleConfig, buildArticleConfigPromptSection } from '@/lib/article-config'
-import { AgentContext, AgentResult } from '@/lib/agents/types'
+import { AgentContext, AgentResult, GEO_STRUCTURE_RULES } from '@/lib/agents/types'
 
 export async function runCopywriterAgent(
   ctx: AgentContext,
@@ -102,7 +102,11 @@ Responda SOMENTE com JSON válido (sem markdown, sem texto fora do JSON):
       messages: [
         {
           role: 'system',
-          content: 'Você é um editor preciso. Recebe um artigo HTML e uma lista de problemas específicos. Corrija APENAS os problemas indicados, preservando todo o restante do conteúdo, estrutura e estilo. Responda em JSON válido sem nenhum texto fora do JSON.',
+          content: `Você é um editor preciso. Recebe um artigo HTML e uma lista de problemas específicos. Corrija APENAS os problemas indicados, preservando todo o restante do conteúdo, estrutura e estilo. Responda em JSON válido sem nenhum texto fora do JSON.
+
+Ao corrigir, siga as regras de estrutura abaixo. Não mexa no que já está de acordo com elas.
+
+${GEO_STRUCTURE_RULES}`,
         },
         { role: 'user', content: userMsg },
       ],

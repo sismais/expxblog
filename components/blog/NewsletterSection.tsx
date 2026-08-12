@@ -42,7 +42,7 @@ export function NewsletterSection({
   return (
     <section className="my-12 rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="px-8 py-12 text-center max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold text-white mb-2">{title}</h2>
+        <h2 className="font-display text-2xl font-bold text-white mb-2">{title}</h2>
         <p className="text-white/70 text-sm mb-8 max-w-lg mx-auto">{subtitle}</p>
         {status === 'success' ? (
           <p className="text-white font-medium">&#10003; Obrigado! Você está inscrito na nossa newsletter.</p>
@@ -58,11 +58,16 @@ export function NewsletterSection({
                 disabled={status === 'loading'}
                 className="flex-1 px-4 py-2.5 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none disabled:opacity-60"
               />
+              {/*
+                Botão branco com texto na cor primária: a cor de destaque muda por
+                template (do cyan claro ao vermelho escuro) e texto branco em cima
+                de destaque claro reprova em contraste. O branco funciona nos cinco.
+              */}
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white whitespace-nowrap hover:opacity-90 transition-opacity disabled:opacity-60"
-                style={{ backgroundColor: 'var(--color-secondary)' }}
+                className="px-6 py-2.5 rounded-lg bg-white text-sm font-semibold whitespace-nowrap hover:bg-white/90 transition-colors disabled:opacity-60"
+                style={{ color: 'var(--color-primary)' }}
               >
                 {status === 'loading' ? 'Aguarde...' : 'Inscrever-se'}
               </button>
