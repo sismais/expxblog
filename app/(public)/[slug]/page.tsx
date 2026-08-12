@@ -94,9 +94,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const { company } = await getSettings()
   const siteName = company.blog_name || process.env.NEXT_PUBLIC_BLOG_NAME || 'Blog'
   const url = `${baseUrl}/${post.slug}`
-  // Sem capa própria, a chave `images` fica de fora de propósito: assim o
-  // opengraph-image.tsx (capa gerada) assume. Passar [] aqui apagaria ela.
-  const images = post.cover_image ? [{ url: post.cover_image, alt: post.title }] : undefined
+  // A chave `images` precisa ficar AUSENTE do objeto quando o post não tem capa.
+  // Declará-la, mesmo como undefined, faz o Next entender que a imagem foi
+  // definida à mão e não injetar a capa gerada pelo opengraph-image.tsx.
+  const ogImages = post.cover_image
+    ? { images: [{ url: post.cover_image, alt: post.title }] }
+    : {}
+  const twitterImages = post.cover_image ? { images: [post.cover_image] } : {}
 
   return {
     title: post.title,
@@ -111,7 +115,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       url,
       siteName,
       locale: 'pt_BR',
-      images,
+      ...ogImages,
       publishedTime: post.published_at?.toISOString(),
       modifiedTime: post.updated_at?.toISOString(),
       ...(post.tags.length > 0 ? { tags: post.tags.map((t) => t.name) } : {}),
@@ -120,7 +124,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: post.cover_image ? [post.cover_image] : undefined,
+      ...twitterImages,
     },
   }
 }
