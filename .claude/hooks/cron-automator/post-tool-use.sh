@@ -25,8 +25,8 @@ if [ "$TOOL" = "Write" ] || [ "$TOOL" = "Edit" ] || [ "$TOOL" = "MultiEdit" ]; t
     # 2. maxDuration obrigatório
     HAS_MAX_DURATION=$(grep -n "maxDuration" "$TARGET" 2>/dev/null)
     if [ -z "$HAS_MAX_DURATION" ]; then
-      echo "ERRO [cron-automator]: $TARGET não tem 'export const maxDuration = 800'!" >&2
-      echo "Adicione: export const maxDuration = 800" >&2
+      echo "ERRO [cron-automator]: $TARGET não tem 'export const maxDuration = 300'!" >&2
+      echo "Adicione: export const maxDuration = 300" >&2
       exit 2
     fi
 

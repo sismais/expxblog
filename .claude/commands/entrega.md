@@ -40,8 +40,8 @@ git ls-files | grep -E "\.env$|\.env\.local$|\.env\.production$"
 # Verifica que node_modules está no .gitignore
 grep "node_modules" .gitignore
 
-# Verifica que public/uploads está no .gitignore
-grep "public/uploads" .gitignore
+# Verifica que .env não está versionado
+grep -E "^\.env$" .gitignore
 ```
 
 ### Etapa 5 — Relatório de próximos passos
@@ -69,7 +69,7 @@ Gera um relatório estruturado:
 1. cp .env.example .env
 2. Preencher as variáveis em .env
 3. npm install
-4. npm run db:migrate
+4. npm run db:push
 5. npm run db:seed
 6. npm run dev
 

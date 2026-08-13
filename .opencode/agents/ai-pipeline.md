@@ -8,10 +8,15 @@ description: >
   Also handles the continuous learning system (reviewer principles) and agent_configs.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Edit
-  - Write
-  - Bash
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: true
+  write: true
+  bash: true
+  task: false
+  webfetch: false
 ---
 
 # Agent: ai-pipeline

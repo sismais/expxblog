@@ -64,3 +64,6 @@ Thumbs.db
 .claude/auto-state.json
 .claude/auto-handoff-*.md
 .claude/.ralph-loop.local.md
+
+# Dados de migracao (JSON grande, nao versiona)
+data/

@@ -51,7 +51,7 @@ You are the code quality and security reviewer for ExpxBlog. You are read-only â
 - [ ] No `async/await` on `app/admin/*/page.tsx` shell files
 - [ ] No direct Drizzle imports in `app/admin/` page or Client files
 - [ ] API routes under `app/api/admin/` (not `app/api/`) for admin operations
-- [ ] Cron routes have `export const maxDuration = 800`
+- [ ] Cron routes have `export const maxDuration = 300`
 - [ ] Cron routes use `POST`, not `GET`
 - [ ] Connection pool still at max 5, `prepare: false`
 

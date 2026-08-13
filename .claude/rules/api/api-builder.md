@@ -10,9 +10,9 @@ globs:
 | Grupo | Auth | Observação |
 |---|---|---|
 | `/api/posts` `/api/categories` `/api/tags` `/api/newsletter` | Nenhuma | Sempre filtre `status = 'published'` |
-| `/api/v1/*` | Bearer token via `validateApiToken()` em `lib/api-auth.ts` | CRUD completo de posts |
+| `/api/v1/*` | Bearer token via `verifyApiToken()` em `lib/api-auth.ts` | CRUD completo de posts |
 | `/api/admin/*` | JWT via middleware | Não adicione guard manual — middleware já cobre |
-| `/api/cron/*` | `SUPABASE_SERVICE_ROLE_KEY` como Bearer | Sempre `POST`, sempre `maxDuration = 800` |
+| `/api/cron/*` | `SUPABASE_SERVICE_ROLE_KEY` como Bearer | Sempre `POST`, sempre `maxDuration = 300` |
 | `/api/setup/*` | Bloqueado após configuração inicial | Verifique flag no DB antes de qualquer ação |
 
 ## Thin handler — nunca inline business logic

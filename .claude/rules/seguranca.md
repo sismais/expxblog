@@ -12,7 +12,8 @@ alwaysApply: true
 
 ## HTML e injeção
 - Todo HTML fornecido pelo usuário ou gerado por IA **deve** passar por `sanitize-html` antes de ser persistido
-- Tags permitidas: `p h1 h2 h3 h4 h5 h6 a img strong em ul ol li blockquote` — qualquer outra é stripped
+- Preset em uso: `sanitizeHtml.defaults.allowedTags` + `['h2','h3','img']`, com `img: ['src','alt']` nos atributos — qualquer outra tag é stripped
+- Esse preset está duplicado em `app/api/admin/posts/route.ts`, `app/api/admin/posts/[id]/route.ts`, `app/api/admin/ai/article/generate/route.ts` e `.../generate-from-url/route.ts` — ao mudar um, mude os quatro
 - Nunca use `.innerHTML` sem sanitização em componentes React — use `dangerouslySetInnerHTML` apenas com output já sanitizado
 
 ## Imagens remotas

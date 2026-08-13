@@ -14,8 +14,7 @@ alwaysApply: true
 | `git add / commit / push` | Bash — execute diretamente após qualquer alteração |
 | `npm run build` | Bash — execute para verificar antes de finalizar |
 | `npm run lint` | Bash — execute junto com o build |
-| `npm run db:generate` | Bash — execute ao alterar `drizzle/schema.ts` |
-| `npm run db:migrate` | Bash — execute após gerar a migration |
+| `npm run db:push` | Bash — execute ao alterar `drizzle/schema.ts` (não esqueça de espelhar em `drizzle/setup-sql.ts`) |
 | SQL no Supabase | MCP `mcp__plugin_supabase_supabase__execute_sql` ou `apply_migration` |
 | Configurar pg_cron | MCP `mcp__plugin_supabase_supabase__execute_sql` com o SQL do cron |
 

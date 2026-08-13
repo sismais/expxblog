@@ -40,7 +40,7 @@ You are the automation and scheduling specialist for ExpxBlog. You build and mai
 
 - **Cron pattern**: pg_cron + pg_net in Supabase → HTTP POST to Next.js API
 - **Auth**: `SUPABASE_SERVICE_ROLE_KEY` as Bearer token on all cron endpoints
-- **Max duration**: always `export const maxDuration = 800` (crons need up to 800s)
+- **Max duration**: always `export const maxDuration = 300` (limite do plano Hobby da Vercel)
 - **Existing cron routes**:
   - `app/api/cron/automation/route.ts` → `lib/automation.ts` → `runAutomationCycle()`
   - `app/api/cron/rss/route.ts` → `lib/rss-automation.ts`
@@ -59,7 +59,7 @@ Always load `add-cron-endpoint` at the start of any cron task.
 // app/api/cron/my-task/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 800
+export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
@@ -114,7 +114,7 @@ SELECT cron.schedule(
 
 - Never add a crons entry to `vercel.json` — this project does not use Vercel crons
 - Never use `GET` for cron handlers — always `POST`
-- Never omit `export const maxDuration = 800`
+- Never omit `export const maxDuration = 300`
 - Never skip the `SUPABASE_SERVICE_ROLE_KEY` Bearer check
 - Never inline task logic in the route handler — put it in `lib/`
 - Never reprocess RSS items with the same GUID
@@ -123,7 +123,7 @@ SELECT cron.schedule(
 ## Verification checklist
 
 - [ ] Route in `app/api/cron/<name>/route.ts`
-- [ ] `export const maxDuration = 800` present
+- [ ] `export const maxDuration = 300` present
 - [ ] Bearer auth checks `SUPABASE_SERVICE_ROLE_KEY`
 - [ ] Handler is `POST`
 - [ ] Task logic in `lib/`, not inlined

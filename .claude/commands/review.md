@@ -34,7 +34,7 @@ Detail: <o que está errado e por que importa>
 
 - Arquitetura: admin pages devem ser shell Server Component + `*Client.tsx` via `/api/admin/*`
 - IA: toda chamada de IA via `lib/ai.ts` (`callOpenRouter`, `aiChat`) — nenhum SDK direto
-- Auth: `/api/admin/*` não reimplementa auth (middleware já cobre); `/api/v1/*` usa `validateApiToken()`
+- Auth: `/api/admin/*` não reimplementa auth (middleware já cobre); `/api/v1/*` usa `verifyApiToken()`
 - Crons: nunca em `vercel.json` — apenas pg_cron no Supabase
 - API: POST de criação retorna 201; erros usam `{ error: string }`; público filtra `status = 'published'`
 - Frontend: sem hex hardcoded — use tokens Tailwind; ícones Feather outline

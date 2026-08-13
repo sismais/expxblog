@@ -33,9 +33,10 @@ Shape: `(agent_name TEXT PRIMARY KEY, system_prompt TEXT, model TEXT)`. Nunca ad
 Registros de log nunca são atualizados — apenas inseridos. Se precisar registrar conclusão, insira novo registro com status atualizado.
 
 ## Migrations
-- Sempre gere com `npm run db:generate` — nunca edite arquivos de migration manualmente
+- Aplique mudanças de schema com `npm run db:push` (drizzle-kit push) — este projeto não usa arquivos de migration
 - Migration com `ALTER TABLE ... ADD COLUMN NOT NULL` precisa de valor default ou deve ser feita em dois passos
-- Execute `npm run db:generate` e `npm run db:migrate` via Bash — nunca liste esses comandos como "passos manuais"
+- Execute `npm run db:push` via Bash — nunca liste esse comando como "passo manual"
+- Toda tabela/coluna nova precisa ser adicionada TAMBÉM em `drizzle/setup-sql.ts` — é dele que nascem as tabelas no wizard de instalação
 
 ## Execução de SQL no Supabase
 - Use `mcp__plugin_supabase_supabase__execute_sql` para executar SQL diretamente — nunca peça ao usuário para rodar SQL no dashboard do Supabase
