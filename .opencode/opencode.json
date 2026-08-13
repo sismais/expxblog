@@ -1,51 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.schema.json",
   "instructions": [
-    {
-      "title": "Segurança — regras invioláveis",
-      "description": "Restrições de segurança que valem para todos os agents e módulos",
-      "content": "Nunca leia chave de IA de process.env — use getAIApiKey() de lib/ai.ts. Nunca logue JWT_SECRET, SUPABASE_SERVICE_ROLE_KEY ou tokens JWT. HTML de usuário ou de IA sempre passa por sanitize-html antes de persistir. Nunca execute vercel deploy — deploy é exclusivamente via git push origin master. Nunca adicione a chave 'crons' ao vercel.json — crons usam pg_cron + pg_net no Supabase."
-    },
-    {
-      "title": "Convenções gerais",
-      "description": "Padrões universais de código e API",
-      "content": "Erros de API retornam { error: string } — nunca { message }. Imports usam alias @/ — nunca ../../. Status de post: apenas 'draft' ou 'published'. Pool DB: max 5, prepare false — imutável. Nunca use as any para suprimir erro TypeScript."
-    },
-    {
-      "title": "Public Frontend — app/(public)/",
-      "description": "Regras para Server Components públicos",
-      "paths": ["app/(public)/**", "app/feed.xml/**", "components/blog/**"],
-      "content": "Server Components com Drizzle direto — sem fetch('/api/'). Nunca 'use client' em page.tsx. Sempre filtre status = 'published'. generateMetadata() obrigatório em post/categoria/tag. Corpo do artigo: dangerouslySetInnerHTML com HTML sanitizado, classes 'prose prose-lg font-serif'. Pageview fire-and-forget."
-    },
-    {
-      "title": "Admin UI — app/admin/",
-      "description": "Regras para o dashboard administrativo",
-      "paths": ["app/admin/**"],
-      "content": "page.tsx: Server Component puro — sem async, sem Drizzle, sem 'use client', só renderiza XyzClient. *Client.tsx: começa com 'use client', toda lógica e fetch. Data access: sempre fetch('/api/admin/') — nunca Drizzle direto em admin. Feedback: apenas toast (3s) — proibido alert(). Toda nova seção precisa de entrada no navItems de app/admin/layout.tsx."
-    },
-    {
-      "title": "API Builder — app/api/",
-      "description": "Regras para route handlers",
-      "paths": ["app/api/**"],
-      "content": "Admin: protegido pelo middleware — sem guard manual. v1: validateApiToken() de lib/api-auth.ts. Cron: Bearer SUPABASE_SERVICE_ROLE_KEY, POST, maxDuration = 800. Públicas: WHERE status = 'published'. POST criação → 201. DELETE → 200 { success: true }."
-    },
-    {
-      "title": "AI Pipeline — lib/agents/",
-      "description": "Regras para agentes de IA e orquestração",
-      "paths": ["lib/agents/**", "lib/agent-pipeline.ts", "lib/ai.ts", "lib/firecrawl.ts"],
-      "content": "Toda chamada LLM via aiChat() de lib/ai.ts — zero imports de provider direto. Ordem imutável: Headline → Researcher → Analyst → Copywriter → Reviewer → CTA → Designer → Publisher. Só o Publisher persiste. Loop Reviewer→Copywriter: máximo 3 ciclos. Princípios aprendidos: máximo 10, FIFO."
-    },
-    {
-      "title": "Cron Automator — app/api/cron/ e lib/automation*",
-      "description": "Regras para automação agendada",
-      "paths": ["app/api/cron/**", "lib/automation.ts", "lib/rss-automation.ts", "lib/source-crawlers/**"],
-      "content": "Automação só executa se automation_config.enabled = true AND next_run_at <= now(). Toda execução registra em automation_logs. RSS: deduplicação por GUID, itens > 7 dias ignorados. Crawlers: exportam run(), invocados somente pelo runner. Firecrawl: ausência de FIRECRAWL_API_KEY não é erro bloqueante."
-    },
-    {
-      "title": "DB Engineer — drizzle/ e lib/db-queries.ts",
-      "description": "Regras para schema e queries de banco",
-      "paths": ["drizzle/**", "lib/db-queries.ts"],
-      "content": "Junction tables: PK composta — nunca id serial. Toda tabela nova: id, created_at, updated_at. site_settings (key TEXT PK, value TEXT): toda config global vai aqui. automation_logs: append-only — nunca atualize. ADD COLUMN NOT NULL exige DEFAULT ou dois passos. Migrations: npm run db:generate — nunca edite manualmente."
-    }
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".claude/rules/*.md",
+    ".claude/rules/**/*.md"
   ]
 }

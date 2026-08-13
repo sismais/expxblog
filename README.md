@@ -124,13 +124,13 @@ npm run dev          # Servidor de desenvolvimento (http://localhost:3000)
 npm run build        # Build de produção
 npm run lint         # ESLint
 
-npm run db:generate  # Gera migrations a partir de mudanças no schema
-npm run db:migrate   # Aplica migrations pendentes no banco
+npm run db:push      # Aplica mudanças de schema direto no banco
+npm run migrate:images # Migra imagens locais para o Supabase Storage
 npm run db:studio    # Drizzle Studio — GUI visual do banco
 npm run db:seed      # Popula o banco com dados de exemplo (só para dev local)
 ```
 
-> Em produção, as tabelas são criadas pelo wizard. `db:migrate` e `db:seed` são para desenvolvimento local.
+> Em produção, as tabelas são criadas pelo wizard (`drizzle/setup-sql.ts`). `db:push` e `db:seed` são para desenvolvimento local.
 
 ---
 
@@ -185,7 +185,7 @@ As rotas `/api/setup/*` retornam 403 automaticamente se `DATABASE_URL` já estiv
 ### Banco de dados
 
 - Schema em `drizzle/schema.ts` com tipagem TypeScript completa.
-- Conexão via driver `postgres` com `max: 1` e `prepare: false` — necessário para ambientes serverless.
+- Conexão via driver `postgres` com `max: 5` e `prepare: false` — necessário para ambientes serverless.
 - Em produção, tabelas são criadas pelo wizard via `drizzle/setup-sql.ts` (SQL direto, sem CLI).
 
 ### IA (OpenRouter)

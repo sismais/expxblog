@@ -93,10 +93,10 @@ export async function GET(request: NextRequest) {
 ## v1 token auth pattern
 
 ```typescript
-import { validateApiToken } from '@/lib/api-auth'
+import { verifyApiToken } from '@/lib/api-auth'
 
 export async function GET(request: NextRequest) {
-  const auth = await validateApiToken(request)
+  const auth = await verifyApiToken(request)
   if (!auth.valid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   // ... rest of handler
 }

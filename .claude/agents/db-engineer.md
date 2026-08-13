@@ -41,8 +41,8 @@ You are the database engineer for ExpxBlog. You own the Drizzle ORM schema, migr
 - **Schema file**: `drizzle/schema.ts` — all tables defined here
 - **Connection**: `drizzle/db.ts` — pooled connection, max 5, prepare: false, 30s idle timeout, 10min lifetime
 - **DB commands**:
-  - `npm run db:generate` — generate migration from schema changes
-  - `npm run db:migrate` — apply pending migrations
+  - `npm run db:push` — apply schema changes directly (drizzle-kit push; no migration files)
+  - mirror every new table/column in `drizzle/setup-sql.ts` (used by the install wizard)
   - `npm run db:studio` — open Drizzle Studio
   - `npm run db:seed` — seed initial data
 - **Tables**: users, posts, categories, tags, post_categories (junction), post_tags (junction)
@@ -56,7 +56,7 @@ Before any schema change, load `supabase-postgres-best-practices` to follow inde
 ## Responsibilities
 
 1. Add or modify tables in `drizzle/schema.ts`
-2. Run `npm run db:generate` then `npm run db:migrate` after every schema change
+2. Run `npm run db:push` after every schema change, and update `drizzle/setup-sql.ts`
 3. Write or update reusable queries in `lib/db-queries.ts`
 4. Design indexes for performance (foreign keys always get indexes, partial indexes for filtered queries)
 5. Provide pg_cron SQL snippets when a new scheduled task requires DB setup
@@ -100,8 +100,8 @@ export const postMyItems = pgTable('post_my_items', {
 
 ## Verification checklist
 
-- [ ] `npm run db:generate` produces a new migration file
-- [ ] `npm run db:migrate` applies cleanly
+- [ ] `npm run db:push` applies cleanly
+- [ ] new table/column mirrored in `drizzle/setup-sql.ts`
 - [ ] `npm run build` passes (no TS errors from schema changes)
 - [ ] Every new FK column has a corresponding index
 - [ ] No `prepare: true` in connection config

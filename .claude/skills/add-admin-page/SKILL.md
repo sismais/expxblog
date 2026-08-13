@@ -173,8 +173,8 @@ Use a relevant icon from the Feather Icons set (same style used throughout: 17×
 If the feature requires a new DB table, add it to `drizzle/schema.ts` and run:
 
 ```bash
-npm run db:generate   # creates migration file
-npm run db:migrate    # applies to DB
+npm run db:push       # aplica o schema no banco
+# e espelhe a tabela em drizzle/setup-sql.ts
 ```
 
 ---

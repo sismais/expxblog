@@ -7,10 +7,15 @@ description: >
   UI components or lib/agents/. Knows the auth patterns for each route group.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Edit
-  - Write
-  - Bash
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: true
+  write: true
+  bash: true
+  task: false
+  webfetch: false
 ---
 
 # Agent: api-builder

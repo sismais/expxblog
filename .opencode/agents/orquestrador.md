@@ -9,10 +9,15 @@ description: >
   concluída.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Bash
-  - Agent
-  - TodoWrite
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: false
+  write: false
+  bash: true
+  task: true
+  webfetch: false
 ---
 
 # Agent: orquestrador

@@ -7,10 +7,15 @@ description: >
   only touches drizzle/ and lib/db-queries.ts.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Edit
-  - Write
-  - Bash
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: true
+  write: true
+  bash: true
+  task: false
+  webfetch: false
 ---
 
 # Agent: db-engineer

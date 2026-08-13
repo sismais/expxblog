@@ -18,7 +18,7 @@ fi
 # 2. Rotas de cron sem maxDuration?
 CRON_NO_DURATION=$(grep -rL "maxDuration" app/api/cron/ --include="route.ts" 2>/dev/null)
 if [ -n "$CRON_NO_DURATION" ]; then
-  echo "AVISO [api-builder]: Rotas de cron sem 'export const maxDuration = 800':" >&2
+  echo "AVISO [api-builder]: Rotas de cron sem 'export const maxDuration = 300':" >&2
   echo "$CRON_NO_DURATION" >&2
 fi
 

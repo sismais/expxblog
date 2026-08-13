@@ -35,8 +35,8 @@ Work through these categories in order. For each finding, emit a classified item
 ### 3. Authentication & security
 
 - `/api/admin/*` routes must NOT re-implement their own auth guard — `middleware.ts` already covers them.
-- `/api/v1/*` routes must call `validateApiToken()` from `lib/api-auth.ts`.
-- `/api/cron/*` routes must validate `SUPABASE_SERVICE_ROLE_KEY` as Bearer, have `maxDuration = 800`, and use `POST`.
+- `/api/v1/*` routes must call `verifyApiToken()` from `lib/api-auth.ts`.
+- `/api/cron/*` routes must validate `SUPABASE_SERVICE_ROLE_KEY` as Bearer, have `maxDuration = 300`, and use `POST`.
 - HTML content from user input or AI output must be passed through `sanitize-html` before being persisted.
 - `x-user-id` / `x-user-email` must come only from middleware-injected headers, never from the request body or query string.
 - `JWT_SECRET` and service role keys must never be logged or returned in API responses.
@@ -44,7 +44,7 @@ Work through these categories in order. For each finding, emit a classified item
 ### 4. Database rules
 
 - Junction tables (`post_categories`, `post_tags`) must NOT have a serial `id` column — PK is composite.
-- New migrations must be generated via `npm run db:generate`, not hand-edited.
+- Schema changes go through `npm run db:push` and must be mirrored in `drizzle/setup-sql.ts`.
 - `automation_logs` records must be INSERT-only — never UPDATE an existing log row.
 - Reusable queries belong in `lib/db-queries.ts`, not inlined in route handlers or page components.
 

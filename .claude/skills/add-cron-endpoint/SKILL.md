@@ -3,7 +3,7 @@ name: add-cron-endpoint
 description: >
   Use when creating a new scheduled/cron task in the ExpxBlog project.
   Enforces the project's cron pattern: pg_cron + pg_net on Supabase (never
-  vercel.json cron), Bearer auth with SUPABASE_SERVICE_ROLE_KEY, maxDuration 800,
+  vercel.json cron), Bearer auth with SUPABASE_SERVICE_ROLE_KEY, maxDuration 300,
   and logging to automation_logs. Prevents the most common LLM mistake: using
   Vercel's native cron instead of the project's Supabase-based cron.
 ---
@@ -46,7 +46,7 @@ Create `app/api/cron/<name>/route.ts`. The structure is always the same:
 // app/api/cron/my-task/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
-export const maxDuration = 800  // required — crons need up to 800s
+export const maxDuration = 300  // required — limite do plano Hobby da Vercel
 
 export async function POST(request: NextRequest) {
   // 1. Authenticate with SUPABASE_SERVICE_ROLE_KEY
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-Always `POST`, never `GET`. Always `maxDuration = 800`.
+Always `POST`, never `GET`. Always `maxDuration = 300`.
 
 ### 2. Implement the task logic in `lib/`
 
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
 
 // ❌ NEVER — missing maxDuration (will timeout at 60s default)
 export async function POST(request: NextRequest) { ... }
-// missing: export const maxDuration = 800
+// missing: export const maxDuration = 300
 ```
 
 ---
@@ -203,7 +203,7 @@ Use these as reference when implementing a new cron route.
 ## Verification before finishing
 
 - [ ] Route is in `app/api/cron/<name>/route.ts`
-- [ ] `export const maxDuration = 800` is present
+- [ ] `export const maxDuration = 300` is present
 - [ ] Auth guard checks `SUPABASE_SERVICE_ROLE_KEY` as Bearer token
 - [ ] Handler is `POST`, not `GET`
 - [ ] Task logic is in `lib/`, not inlined in the route

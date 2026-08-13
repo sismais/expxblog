@@ -49,8 +49,8 @@ Complementam os system prompts dos agents — não repetem o que está em CLAUDE
 ## `app/api/` — API Builder
 
 - `/api/admin/*`: protegido pelo `middleware.ts` — não adicione guard manual
-- `/api/v1/*`: `validateApiToken()` de `lib/api-auth.ts`
-- `/api/cron/*`: Bearer `SUPABASE_SERVICE_ROLE_KEY`, método `POST`, `export const maxDuration = 800`
+- `/api/v1/*`: `verifyApiToken()` de `lib/api-auth.ts`
+- `/api/cron/*`: Bearer `SUPABASE_SERVICE_ROLE_KEY`, método `POST`, `export const maxDuration = 300`
 - Rotas públicas (`/api/posts`, `/api/categories`, `/api/tags`): sempre `WHERE status = 'published'`
 - Handlers > ~15 linhas extraem lógica para `lib/`; queries > 3 linhas vão para `lib/db-queries.ts`
 - `POST` que cria recurso → `201`; `DELETE` → `200 { success: true }`; validação → `400 { error }`
@@ -85,4 +85,4 @@ Complementam os system prompts dos agents — não repetem o que está em CLAUDE
 - `site_settings (key TEXT PK, value TEXT)`: toda configuração global vai aqui — nunca crie tabela de config separada
 - `automation_logs`: append-only — nunca atualize registros já inseridos
 - `ALTER TABLE ... ADD COLUMN NOT NULL` em tabela com dados existentes exige `DEFAULT` ou dois passos
-- Migrations: sempre `npm run db:generate` — nunca edite arquivos de migration manualmente
+- Schema: aplique com `npm run db:push` — sem arquivos de migration; toda tabela nova vai também em `drizzle/setup-sql.ts` (usado pelo wizard)

@@ -8,8 +8,15 @@ description: >
   Run before every commit to catch regressions.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Bash
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: false
+  write: false
+  bash: true # somente comandos de leitura: grep, find, git diff, git log, ls
+  task: false
+  webfetch: false
 ---
 
 # Agent: reviewer

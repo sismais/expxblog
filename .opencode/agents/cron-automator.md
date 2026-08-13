@@ -8,10 +8,15 @@ description: >
   Never touches UI or pipeline agents.
 model: claude-sonnet-4-6
 tools:
-  - Read
-  - Edit
-  - Write
-  - Bash
+  read: true
+  glob: true
+  grep: true
+  list: true
+  edit: true
+  write: true
+  bash: true
+  task: false
+  webfetch: false
 ---
 
 # Agent: cron-automator

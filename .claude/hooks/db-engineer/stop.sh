@@ -28,7 +28,7 @@ SCHEMA_MODIFIED=$(git diff --name-only HEAD 2>/dev/null | grep "drizzle/schema.t
 MIGRATION_NEW=$(git diff --name-only HEAD 2>/dev/null | grep "drizzle/migrations/")
 if [ -n "$SCHEMA_MODIFIED" ] && [ -z "$MIGRATION_NEW" ]; then
   echo "AVISO [db-engineer]: drizzle/schema.ts foi modificado mas não há migration nova." >&2
-  echo "Execute: npm run db:generate && npm run db:migrate" >&2
+  echo "Execute: npm run db:push" >&2
 fi
 
 echo "[db-engineer] Verificações de banco OK. Encerrando." >&2
