@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS "posts" (
   "content" text NOT NULL DEFAULT '',
   "excerpt" text NOT NULL DEFAULT '',
   "cover_image" text,
+  "legacy_url" text,
   "status" text NOT NULL DEFAULT 'draft',
   "published_at" timestamp,
   "created_at" timestamp NOT NULL DEFAULT now(),
@@ -23,6 +24,7 @@ CREATE TABLE IF NOT EXISTS "posts" (
 
 CREATE INDEX IF NOT EXISTS "posts_status_idx" ON "posts" ("status");
 CREATE INDEX IF NOT EXISTS "posts_published_at_idx" ON "posts" ("published_at");
+CREATE UNIQUE INDEX IF NOT EXISTS "posts_legacy_url_uniq" ON "posts" ("legacy_url");
 
 CREATE TABLE IF NOT EXISTS "categories" (
   "id" serial PRIMARY KEY NOT NULL,

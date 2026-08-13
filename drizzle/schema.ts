@@ -30,6 +30,8 @@ export const posts = pgTable(
     content: text('content').notNull().default(''),
     excerpt: text('excerpt').notNull().default(''),
     cover_image: text('cover_image'),
+    // URL original do WP, para deduplicar a importação e montar o mapa de redirect 301
+    legacy_url: text('legacy_url'),
     status: text('status', { enum: ['draft', 'published'] })
       .notNull()
       .default('draft'),
@@ -40,6 +42,9 @@ export const posts = pgTable(
   (t) => ({
     statusIdx: index('posts_status_idx').on(t.status),
     publishedAtIdx: index('posts_published_at_idx').on(t.published_at),
+    // UNIQUE em coluna nullable: no Postgres múltiplos NULL são permitidos,
+    // então deduplica só os legacy_url preenchidos (posts migrados do WP)
+    legacyUrlUniq: uniqueIndex('posts_legacy_url_uniq').on(t.legacy_url),
   })
 )
 
