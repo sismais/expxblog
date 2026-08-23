@@ -160,8 +160,7 @@ JSON válido (sem markdown):
       slug,
       content: cleanContent,
       excerpt: articleData.excerpt ?? '',
-      status: 'published',
-      published_at: now,
+      status: 'draft',
       updated_at: now,
     })
     .returning()

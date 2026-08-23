@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     await sendTelegramMessage(
       config.bot_token,
       chatId,
-      `Olá! Este bot gera artigos automaticamente.\n\nSeu Chat ID é: <code>${chatId}</code>\n\nEnvie um tema ou um link para gerar e publicar um artigo.`
+      `Olá! Este bot gera artigos automaticamente.\n\nSeu Chat ID é: <code>${chatId}</code>\n\nEnvie um tema ou um link para gerar um artigo como rascunho. Você receberá o link para revisar e publicar.`
     )
     return NextResponse.json({ ok: true })
   }
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const appUrl = getAppUrl().replace(/\/$/, '')
-    const { title, slug } = await generateAndPublishPost(text)
-    const postUrl = `${appUrl}/${slug}`
+    const { post_id, title } = await generateAndPublishPost(text)
+    const editUrl = `${appUrl}/admin/artigos/${post_id}/editar`
 
     await sendTelegramMessage(
       config.bot_token,
       chatId,
-      `✅ Artigo publicado!\n\n<b>${escapeHtml(title)}</b>\n\n🔗 ${postUrl}`
+      `✅ Artigo salvo como rascunho!\n\n<b>${escapeHtml(title)}</b>\n\n🔗 Revise e publique: ${editUrl}`
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erro ao gerar artigo'
