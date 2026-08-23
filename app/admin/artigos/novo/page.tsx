@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { generateSlug } from '@/lib/slug'
+import { useDraftAutosave } from '@/lib/useDraftAutosave'
+import { DraftAutosaveBar } from '@/components/admin/DraftAutosaveBar'
+import { AutosaveIndicator } from '@/components/admin/AutosaveIndicator'
 import dynamic from 'next/dynamic'
 
 const TiptapEditor = dynamic(() => import('@/components/blog/TiptapEditor'), { ssr: false })
@@ -14,6 +17,8 @@ interface Tag { id: number; name: string }
 
 export default function NovoArtigoPage() {
   const router = useRouter()
+  const draftKeyRef = useRef<string>(`draft:new:${Date.now()}`)
+
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [excerpt, setExcerpt] = useState('')
@@ -25,6 +30,43 @@ export default function NovoArtigoPage() {
   const [tags, setTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Autosave
+  const {
+    hasDraft,
+    draftData,
+    restoreDraft,
+    discardDraft,
+    autosaveStatus,
+    lastSavedAt,
+    clearDraft
+  } = useDraftAutosave({
+    key: draftKeyRef.current,
+    data: {
+      savedAt: 0,
+      title,
+      slug,
+      excerpt,
+      content,
+      coverImage,
+      categoryIds: selectedCategories,
+      tagIds: selectedTags
+    },
+    enabled: !loading
+  })
+
+  // Restaurar rascunho se solicitado
+  useEffect(() => {
+    if (draftData && hasDraft) {
+      setTitle(draftData.title)
+      setSlug(draftData.slug)
+      setExcerpt(draftData.excerpt)
+      setContent(draftData.content)
+      setCoverImage(draftData.coverImage)
+      setSelectedCategories(draftData.categoryIds)
+      setSelectedTags(draftData.tagIds)
+    }
+  }, [draftData, hasDraft])
 
   useEffect(() => {
     Promise.all([
@@ -57,6 +99,7 @@ export default function NovoArtigoPage() {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Erro ao salvar'); return }
+      clearDraft()
       router.push('/admin/artigos')
     } catch { setError('Erro de conexão') }
     finally { setLoading(false) }
@@ -65,6 +108,14 @@ export default function NovoArtigoPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-neutral-900 mb-6">Novo Artigo</h1>
+
+      {hasDraft && draftData && (
+        <DraftAutosaveBar
+          savedAt={draftData.savedAt}
+          onRestore={restoreDraft}
+          onDiscard={discardDraft}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
@@ -153,10 +204,13 @@ export default function NovoArtigoPage() {
 
       {error && <p role="alert" className="mt-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
 
-      <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
-        <Button variant="ghost" onClick={() => router.back()} disabled={loading}>Cancelar</Button>
-        <Button variant="ghost" onClick={() => handleSubmit('draft')} loading={loading} className="bg-gray-600 text-white hover:bg-gray-700 border-0">Salvar Rascunho</Button>
-        <Button onClick={() => handleSubmit('published')} loading={loading}>Publicar</Button>
+      <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+        <AutosaveIndicator status={autosaveStatus} lastSavedAt={lastSavedAt} />
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => router.back()} disabled={loading}>Cancelar</Button>
+          <Button variant="ghost" onClick={() => handleSubmit('draft')} loading={loading} className="bg-gray-600 text-white hover:bg-gray-700 border-0">Salvar Rascunho</Button>
+          <Button onClick={() => handleSubmit('published')} loading={loading}>Publicar</Button>
+        </div>
       </div>
     </div>
   )

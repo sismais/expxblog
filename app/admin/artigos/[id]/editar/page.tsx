@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { useDraftAutosave } from '@/lib/useDraftAutosave'
+import { DraftAutosaveBar } from '@/components/admin/DraftAutosaveBar'
+import { AutosaveIndicator } from '@/components/admin/AutosaveIndicator'
 import dynamic from 'next/dynamic'
 
 const TiptapEditor = dynamic(() => import('@/components/blog/TiptapEditor'), { ssr: false })
@@ -13,6 +16,8 @@ interface Tag { id: number; name: string }
 
 export default function EditarArtigoPage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const postTimestampRef = useRef<number>(0)
+
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
   const [excerpt, setExcerpt] = useState('')
@@ -23,8 +28,49 @@ export default function EditarArtigoPage({ params }: { params: { id: string } })
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [loading, setLoading] = useState(false)
+  const [previewing, setPreviewing] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
+
+  // Autosave
+  const {
+    hasDraft,
+    draftData,
+    restoreDraft,
+    discardDraft,
+    autosaveStatus,
+    lastSavedAt,
+    clearDraft
+  } = useDraftAutosave({
+    key: `draft:edit:${params.id}`,
+    data: {
+      savedAt: 0,
+      title,
+      slug,
+      excerpt,
+      content,
+      coverImage,
+      categoryIds: selectedCategories,
+      tagIds: selectedTags
+    },
+    enabled: !loading && !fetching
+  })
+
+  // Se o rascunho for mais recente que o post, restaurar
+  const shouldRestore = draftData && draftData.savedAt > postTimestampRef.current
+
+  // Restaurar rascunho se solicitado
+  useEffect(() => {
+    if (draftData && hasDraft && shouldRestore) {
+      setTitle(draftData.title)
+      setSlug(draftData.slug)
+      setExcerpt(draftData.excerpt)
+      setContent(draftData.content)
+      setCoverImage(draftData.coverImage)
+      setSelectedCategories(draftData.categoryIds)
+      setSelectedTags(draftData.tagIds)
+    }
+  }, [draftData, hasDraft, shouldRestore])
 
   useEffect(() => {
     Promise.all([
@@ -34,6 +80,7 @@ export default function EditarArtigoPage({ params }: { params: { id: string } })
     ]).then(([postData, cData, tData]) => {
       const post = postData.post
       if (post) {
+        postTimestampRef.current = new Date(post.updated_at || post.created_at).getTime()
         setTitle(post.title)
         setSlug(post.slug)
         setExcerpt(post.excerpt)
@@ -64,9 +111,41 @@ export default function EditarArtigoPage({ params }: { params: { id: string } })
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Erro ao salvar'); return }
+      clearDraft()
       router.push('/admin/artigos')
     } catch { setError('Erro de conexão') }
     finally { setLoading(false) }
+  }
+
+  // Pré-visualizar: salva as alterações atuais (mantendo o status do post) e abre o preview
+  async function handlePreview() {
+    setError('')
+    setPreviewing(true)
+    try {
+      const saveRes = await fetch(`/api/admin/posts/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title, slug, excerpt, content,
+          cover_image: coverImage || null,
+          category_ids: selectedCategories,
+          tag_ids: selectedTags,
+        }),
+      })
+      if (!saveRes.ok) {
+        const data = await saveRes.json().catch(() => null)
+        setError(data?.error ?? 'Erro ao salvar para pré-visualizar')
+        return
+      }
+      const res = await fetch(`/api/admin/posts/${params.id}/preview-token`)
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        setError(data.error ?? 'Erro ao gerar pré-visualização')
+        return
+      }
+      window.open(data.url, '_blank')
+    } catch { setError('Erro de conexão') }
+    finally { setPreviewing(false) }
   }
 
   if (fetching) return <div className="text-center py-16 text-gray-400">Carregando artigo...</div>
@@ -74,6 +153,15 @@ export default function EditarArtigoPage({ params }: { params: { id: string } })
   return (
     <div>
       <h1 className="text-2xl font-bold text-neutral-900 mb-6">Editar Artigo</h1>
+
+      {hasDraft && draftData && shouldRestore && (
+        <DraftAutosaveBar
+          savedAt={draftData.savedAt}
+          onRestore={restoreDraft}
+          onDiscard={discardDraft}
+        />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <div>
@@ -129,10 +217,17 @@ export default function EditarArtigoPage({ params }: { params: { id: string } })
         </div>
       </div>
       {error && <p role="alert" className="mt-4 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}
-      <div className="flex gap-3 mt-6 pt-6 border-t border-gray-200">
-        <Button variant="ghost" onClick={() => router.back()} disabled={loading}>Cancelar</Button>
-        <Button variant="ghost" onClick={() => handleSubmit('draft')} loading={loading} className="bg-gray-600 text-white hover:bg-gray-700 border-0">Salvar Rascunho</Button>
-        <Button onClick={() => handleSubmit('published')} loading={loading}>Publicar</Button>
+      <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+        <AutosaveIndicator status={autosaveStatus} lastSavedAt={lastSavedAt} />
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={() => router.back()} disabled={loading || previewing}>Cancelar</Button>
+          <Button variant="ghost" onClick={handlePreview} loading={previewing} disabled={loading} title="Salva as alterações atuais e abre a pré-visualização">
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Pré-visualizar
+          </Button>
+          <Button variant="ghost" onClick={() => handleSubmit('draft')} loading={loading} disabled={previewing} className="bg-gray-600 text-white hover:bg-gray-700 border-0">Salvar Rascunho</Button>
+          <Button onClick={() => handleSubmit('published')} loading={loading} disabled={previewing}>Publicar</Button>
+        </div>
       </div>
     </div>
   )
