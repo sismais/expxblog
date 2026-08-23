@@ -757,6 +757,7 @@ function AutomacaoSection() {
   const [themeMode, setThemeMode] = useState<'all' | 'specific'>('all')
   const [selectedThemeIds, setSelectedThemeIds] = useState<number[]>([])
   const [customPrompt, setCustomPrompt] = useState('')
+  const [publishStatus, setPublishStatus] = useState<'draft' | 'published'>('draft')
   const [themes, setThemes] = useState<ArticleTheme[]>([])
   const [lastRunAt, setLastRunAt] = useState<string | null>(null)
   const [nextRunAt, setNextRunAt] = useState<string | null>(null)
@@ -809,6 +810,16 @@ function AutomacaoSection() {
       .then((data: { themes?: ArticleTheme[] }) => setThemes(data.themes ?? []))
       .catch(() => {})
 
+    // Carrega configuração de status de publicação da automação
+    fetch('/api/admin/settings')
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: { automation?: { publish_status?: 'draft' | 'published' } }) => {
+        if (data.automation?.publish_status) {
+          setPublishStatus(data.automation.publish_status)
+        }
+      })
+      .catch(() => {})
+
     reloadLogs()
   }, [])
 
@@ -816,6 +827,7 @@ function AutomacaoSection() {
     setSaving(true)
     setToast(null)
     try {
+      // Salva configuração da automação
       const res = await fetch('/api/admin/automation', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -826,7 +838,18 @@ function AutomacaoSection() {
           custom_prompt: customPrompt,
         }),
       })
-      if (!res.ok) throw new Error('Erro ao salvar')
+      if (!res.ok) throw new Error('Erro ao salvar configuração da automação')
+
+      // Salva status de publicação
+      const settingsRes = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          automation: { publish_status: publishStatus },
+        }),
+      })
+      if (!settingsRes.ok) throw new Error('Erro ao salvar status de publicação')
+
       setToast({ type: 'success', msg: 'Configuração salva com sucesso!' })
       await reloadConfig()
     } catch {
@@ -844,7 +867,10 @@ function AutomacaoSection() {
       const res = await fetch('/api/admin/automation/run', { method: 'POST' })
       const data = await res.json() as { success?: boolean; skipped?: boolean; message?: string; error?: string; post_id?: number; image_error?: string }
       if (data.success) {
-        setToast({ type: 'success', msg: data.message ?? 'Artigo gerado e publicado!' })
+        const baseMsg = publishStatus === 'draft'
+          ? 'Artigo gerado e salvo como rascunho! Revise em Artigos.'
+          : 'Artigo gerado e publicado!'
+        setToast({ type: 'success', msg: data.message ?? baseMsg })
         if (data.image_error) {
           setImageWarning(`Imagem de capa não gerada: ${data.image_error}`)
         }
@@ -925,6 +951,45 @@ function AutomacaoSection() {
                 enabled ? 'translate-x-6' : 'translate-x-1'
               }`} />
             </button>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status de publicação</label>
+            <p className="text-xs text-gray-500 mb-3">
+              Escolha como os artigos gerados pela automação devem ser salvos.
+            </p>
+            <div className="space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer p-3 bg-white border border-gray-200 rounded-lg hover:border-brand-primary transition-colors">
+                <input
+                  type="radio"
+                  name="publishStatus"
+                  checked={publishStatus === 'draft'}
+                  onChange={() => setPublishStatus('draft')}
+                  className="mt-0.5 text-brand-primary"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Salvar como rascunho (recomendado)</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Os artigos ficam salvos como rascunho para que você possa revisar e publicar manualmente.
+                  </p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer p-3 bg-white border border-gray-200 rounded-lg hover:border-brand-primary transition-colors">
+                <input
+                  type="radio"
+                  name="publishStatus"
+                  checked={publishStatus === 'published'}
+                  onChange={() => setPublishStatus('published')}
+                  className="mt-0.5 text-brand-primary"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Publicar direto</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Os artigos são publicados automaticamente sem revisão prévia. Use com cautela.
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div>

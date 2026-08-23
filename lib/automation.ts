@@ -1,5 +1,5 @@
 import { db } from '@/drizzle/db'
-import { automationConfig, automationLogs } from '@/drizzle/schema'
+import { automationConfig, automationLogs, siteSettings } from '@/drizzle/schema'
 import { createPipelineStream } from '@/lib/agent-pipeline'
 import type { PipelineEvent } from '@/lib/agents/types'
 import { eq } from 'drizzle-orm'
@@ -46,9 +46,20 @@ export async function runAutomationCycle(
   } catch {}
 
   try {
+    // Lê configuração de publicação da automação (default: draft)
+    let publishStatus: 'draft' | 'published' = 'draft'
+    try {
+      const rows = await db.select({ value: siteSettings.value }).from(siteSettings).where(eq(siteSettings.key, 'automation_publish_status')).limit(1)
+      if (rows.length > 0 && (rows[0].value === 'draft' || rows[0].value === 'published')) {
+        publishStatus = rows[0].value
+      }
+    } catch {
+      // Em caso de erro, mantém o default 'draft'
+    }
+
     const stream = createPipelineStream({
       themeIds,
-      triggers: { publishStatus: 'published' },
+      triggers: { publishStatus },
     })
 
     const reader = stream.getReader()
