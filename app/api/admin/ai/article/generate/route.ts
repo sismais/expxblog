@@ -4,16 +4,10 @@ import { db } from '@/drizzle/db'
 import { posts, postCategories, siteSettings } from '@/drizzle/schema'
 import { generateSlug } from '@/lib/slug'
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 import { eq } from 'drizzle-orm'
 import { getArticleConfig, buildArticleConfigPromptSection } from '@/lib/article-config'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: {
-    ...sanitizeHtml.defaults.allowedAttributes,
-    img: ['src', 'alt'],
-  },
-}
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,5 +1,6 @@
 // lib/agents/publisher.ts
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 import { db } from '@/drizzle/db'
 import { posts, postCategories, categories, articleThemes, automationConfig, siteSettings, newsletterSubscribers } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -7,14 +8,6 @@ import { generateSlug } from '@/lib/slug'
 import { AgentContext, AgentResult, PublisherTriggers } from '@/lib/agents/types'
 import { aiChat } from '@/lib/ai'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: {
-    ...sanitizeHtml.defaults.allowedAttributes,
-    a: ['href', 'name', 'target', 'rel'],
-    img: ['src', 'alt'],
-  },
-}
 
 export async function runPublisherAgent(
   ctx: AgentContext,
