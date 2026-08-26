@@ -217,4 +217,28 @@ CREATE INDEX IF NOT EXISTS "ai_request_logs_created_at_idx" ON "ai_request_logs"
 CREATE INDEX IF NOT EXISTS "ai_request_logs_feature_idx" ON "ai_request_logs" ("feature");
 CREATE INDEX IF NOT EXISTS "ai_request_logs_model_idx" ON "ai_request_logs" ("model");
 CREATE INDEX IF NOT EXISTS "ai_request_logs_status_idx" ON "ai_request_logs" ("status");
+
+-- Row Level Security em todas as tabelas.
+-- Sem policy nenhuma: fecha os roles anon e authenticated do PostgREST.
+-- O app nao e afetado porque fala com o banco por DATABASE_URL (role postgres,
+-- via Drizzle) e por service role key no Storage, e ambos passam por cima do RLS.
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "categories" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "post_categories" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "post_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "site_settings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "api_tokens" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "article_themes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "page_views" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "newsletter_subscribers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "automation_config" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_configs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "rss_feeds" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "rss_processed_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "automation_logs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "source_crawlers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "source_crawler_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ai_request_logs" ENABLE ROW LEVEL SECURITY;
 `
