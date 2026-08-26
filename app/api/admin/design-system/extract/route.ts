@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { checkPublicUrl } from '@/lib/safe-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -197,16 +198,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Campo "url" é obrigatório' }, { status: 400 })
     }
 
-    let parsedUrl: URL
-    try {
-      parsedUrl = new URL(rawUrl)
-    } catch {
-      return NextResponse.json({ error: 'URL inválida' }, { status: 400 })
+    const checked = await checkPublicUrl(rawUrl)
+    if (!checked.ok) {
+      return NextResponse.json({ error: checked.error }, { status: 400 })
     }
-
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return NextResponse.json({ error: 'Apenas URLs http/https são permitidas' }, { status: 400 })
-    }
+    const parsedUrl = checked.url
 
     const { html, css } = await fetchPageData(parsedUrl.toString())
 

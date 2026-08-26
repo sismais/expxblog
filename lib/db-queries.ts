@@ -166,7 +166,10 @@ export async function getMostViewedPosts(days = 30, limit = 5) {
         viewCount: count(pageViews.id),
       })
       .from(pageViews)
-      .where(sql`${pageViews.visited_at} >= NOW() - INTERVAL '${days} days'`)
+      // O placeholder tem que ficar FORA do literal. Dentro de INTERVAL '...'
+      // ele virava o texto `$1 days` e o bind nunca acontecia, o que abriria
+      // injeção no dia em que `days` viesse de searchParams.
+      .where(sql`${pageViews.visited_at} >= NOW() - (${days} * INTERVAL '1 day')`)
       .groupBy(pageViews.path)
       .orderBy(desc(count(pageViews.id)))
       .limit(limit)
