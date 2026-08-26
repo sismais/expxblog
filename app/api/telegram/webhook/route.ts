@@ -62,7 +62,18 @@ export async function POST(request: NextRequest) {
     .map((s) => s.trim())
     .filter(Boolean)
 
-  if (allowedIds.length > 0 && !allowedIds.includes(String(chatId))) {
+  // Lista vazia significa "ninguém liberado", não "todo mundo liberado".
+  // Sem isso, qualquer pessoa que achar o bot gera artigo e queima crédito de IA.
+  if (allowedIds.length === 0) {
+    await sendTelegramMessage(
+      config.bot_token,
+      chatId,
+      `Ainda não tem nenhum Chat ID liberado para usar este bot.\n\nSeu Chat ID é: <code>${chatId}</code>\n\nCole ele em Configurações → Telegram no painel do blog para liberar.`
+    )
+    return NextResponse.json({ ok: true })
+  }
+
+  if (!allowedIds.includes(String(chatId))) {
     return NextResponse.json({ ok: true })
   }
 

@@ -26,14 +26,16 @@ export async function POST(request: Request) {
       .where(eq(newsletterSubscribers.email, email))
       .limit(1)
 
+    // Resposta sempre igual, inscrito ou não. Responder diferente para e-mail
+    // já cadastrado transformaria esta rota pública num consultor de quem está
+    // na lista, bastando testar endereços um a um.
     if (existing.length > 0) {
-      if (existing[0].status === 'active') {
-        return NextResponse.json({ error: 'Este e-mail já está inscrito.' }, { status: 409 })
+      if (existing[0].status !== 'active') {
+        await db
+          .update(newsletterSubscribers)
+          .set({ status: 'active', subscribed_at: new Date(), unsubscribed_at: null })
+          .where(eq(newsletterSubscribers.email, email))
       }
-      await db
-        .update(newsletterSubscribers)
-        .set({ status: 'active', subscribed_at: new Date(), unsubscribed_at: null })
-        .where(eq(newsletterSubscribers.email, email))
       return NextResponse.json({ ok: true })
     }
 
