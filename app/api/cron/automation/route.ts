@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAuthorizedCronRequest } from '@/lib/cron-auth'
 import { runAutomationCycle } from '@/lib/automation'
 
 export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
+  if (!isAuthorizedCronRequest(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
