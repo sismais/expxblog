@@ -106,6 +106,41 @@ agora é sempre igual.
 do literal, então o bind nunca acontecia. Não era injeção (o único chamador passa
 a constante 30), mas viraria no dia em que o valor viesse da URL.
 
+### Upload aceitava o que o cliente declarasse
+
+`file.type` vem do multipart e a extensão vem do nome do arquivo. Como o bucket
+é público, dava para subir SVG com `<script>` declarado como imagem e servi-lo
+inline a partir de `*.supabase.co`. O `fetch-logo` era pior: forçava
+`image/svg+xml` quando a URL terminava em `.svg`, contra o que o servidor
+remoto respondeu.
+
+`lib/upload-guard.ts` detecta por magic bytes, deriva a extensão do tipo
+detectado e recusa SVG com script, atributo de evento, `foreignObject`,
+entidade externa ou link `javascript:`. Recusa em vez de limpar: logo legítimo
+não usa nada disso, e remoção na marra deixa passar variação com entidade.
+Validado em 14 casos.
+
+O bucket também ganhou `file_size_limit` de 5 MB e `allowed_mime_types`, que
+eram `null`. Os 144 objetos atuais têm no máximo 1,5 MB, e os cinco tipos batem
+com o que `scripts/migracao-wp/migrate-images.ts` sobe.
+
+### Bearer de API na listagem
+
+`GET /api/admin/api-tokens` devolvia o token completo de todos os registros em
+toda listagem, e o `PUT` fazia `.returning()` sem colunas. A tela já mascarava e
+já avisava "copie agora", então o valor trafegava à toa.
+
+A verificação passou a ser por `token_hash` (SHA-256) e a listagem devolve
+`token_preview`. A migration `api_tokens_hash_and_preview` fez o backfill, então
+integração em uso continua autenticando — conferido que o SHA-256 do Node bate
+com o do Postgres.
+
+### Preset de sanitização em dez cópias
+
+`lib/sanitize.ts` virou a fonte única. A cópia de `lib/agents/publisher.ts` já
+tinha divergido: só ela permitia `rel` em `<a>`. O `rel` foi mantido no preset
+central, porque link com `target="_blank"` precisa poder trazer `rel="noopener"`.
+
 ## Não corrigido — fica para a próxima
 
 ### Segredos serializados no payload RSC da página de configurações
@@ -122,44 +157,33 @@ sessão de migração. O padrão certo já existe no repo:
 Correção: passar `{ configured: boolean, masked: 'sk-or-…abcd' }` e ter endpoint
 que grava a chave nova sem devolver a atual.
 
-### Tokens de API em texto puro, sem expiração
+### Coluna `api_tokens.token` em claro, e sem expiração
 
-`api_tokens.token` guarda o bearer em claro, e `GET /api/admin/api-tokens` o
-devolve inteiro em toda listagem, não só na criação. Não existe `expires_at`.
+A verificação já é por hash e a listagem já não devolve o valor, mas a coluna
+com o texto puro continua preenchida, e não existe `expires_at`.
 
-Correção: guardar `sha256(token)`, mostrar o valor só na resposta do POST,
-listar prefixo `blog_xxxx…`, adicionar expiração. Quebra os tokens existentes,
-então precisa de janela combinada.
-
-### Upload confia no MIME e na extensão do cliente
-
-`/api/admin/upload` usa `file.type` (vem do multipart, controlado por quem
-envia) e `path.extname(file.name)`. SVG está em `ALLOWED_TYPES`, então dá para
-subir SVG com `<script>` no bucket público, servido como `image/svg+xml` a
-partir de `*.supabase.co`.
-
-Correção: detectar pelos magic bytes, derivar a extensão do tipo detectado, e
-para SVG sanitizar ou servir com `content-disposition: attachment`. Cuidado:
-`fetch-logo` depende de aceitar SVG.
-
-### Preset de sanitização repetido em 10 arquivos
-
-O `CLAUDE.md` fala em 4, mas são 10. `lib/agents/publisher.ts` divergiu:
-acrescenta `a: ['href','name','target','rel']`, que os outros nove não têm.
-
-Correção: extrair para `lib/sanitize.ts` e importar nos 10.
-
-### Bucket `uploads` sem limite próprio
-
-`file_size_limit` e `allowed_mime_types` são `null` no bucket. Os 5 MB e os tipos
-são validados só no route handler. Como só o service role escreve, é defesa em
-profundidade, não buraco.
+Limpar exige janela combinada: se o valor for apagado e a integração não tiver
+o token guardado, ela para até alguém gerar outro. Frase que destrava:
+*"pode limpar a coluna token em claro de api_tokens"*.
 
 ### `ssl: { rejectUnauthorized: false }`
 
-`/api/admin/db-diag`, `/api/setup/test-db` e `/api/setup/install` aceitam
-qualquer certificado na conexão com o Postgres. Trocar por `ssl: 'require'`
-precisa de teste contra o pooler do Supabase antes.
+Está em `drizzle/db.ts`, `/api/admin/db-diag`, `/api/setup/test-db` e
+`/api/setup/install` — é padrão do projeto inteiro, não só das rotas de setup.
+
+Medido em 26/08/2026 contra o pooler de produção: `rejectUnauthorized: false` e
+`ssl: 'require'` conectam; `ssl: true` e `'verify-full'` falham com
+`self-signed certificate in certificate chain`. Ou seja, trocar por `'require'`
+não ganharia nada — ele também não valida. A correção real é embarcar o CA do
+Supabase e usar `{ ca, rejectUnauthorized: true }`, o que adiciona um arquivo
+que expira e pede teste em produção.
+
+### `CRON_SECRET` é variável morta
+
+Confirmado por grep: `app/api/setup/install/route.ts:56` grava, nenhum arquivo
+`.ts` lê. Os endpoints de cron autenticam com `SUPABASE_SERVICE_ROLE_KEY`. Não é
+brecha, é lixo que confunde auditoria futura — a variável tem nome de segredo e
+não protege nada.
 
 ### `rewrite-links.ts` grava HTML sem re-sanitizar
 
@@ -174,9 +198,3 @@ Está patchado para o CVE-2025-29927 (bypass de middleware, corrigido no
 14.2.25). Mas a linha 14.x parou de receber backport: `GHSA-c4j6-fc7j-m34r`
 (SSRF via WebSocket upgrade, CVSS 8.6) e outras só têm fix em 15.x/16.x.
 Migrar é decisão de produto, não cabe num `audit fix`.
-
-### `CRON_SECRET` é variável morta
-
-Está gravada na Vercel por `app/api/setup/install/route.ts`, mas nenhum código
-lê. Os endpoints de cron autenticam com `SUPABASE_SERVICE_ROLE_KEY`. Ou o wizard
-grava lixo, ou a documentação e o código divergem.
