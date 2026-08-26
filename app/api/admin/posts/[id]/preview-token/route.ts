@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import { SignJWT } from 'jose'
 import { db } from '@/drizzle/db'
 import { posts } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
 import { getAppUrl } from '@/lib/app-url'
-
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'fallback-secret-must-change-in-prod-32chars'
-)
+import { signPreviewToken } from '@/lib/jwt'
 
 export async function GET(
   request: Request,
@@ -24,12 +20,9 @@ export async function GET(
     return NextResponse.json({ error: 'Artigo não encontrado' }, { status: 404 })
   }
 
-  // Gera token JWT curto (10 minutos)
-  const token = await new SignJWT({ sub: String(postId) })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime('10m')
-    .sign(secret)
+  // Token curto (10 min), assinado com chave própria de preview — nunca vale
+  // como cookie de sessão do admin.
+  const token = await signPreviewToken(postId)
 
   const baseUrl = getAppUrl()
   const url = `${baseUrl}/preview/${postId}?token=${token}`

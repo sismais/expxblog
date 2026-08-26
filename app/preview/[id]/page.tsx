@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { jwtVerify } from 'jose'
+import { verifyPreviewToken } from '@/lib/jwt'
 import { Badge } from '@/components/ui/Badge'
 import { Breadcrumb } from '@/components/blog/Breadcrumb'
 import type { BreadcrumbItem } from '@/components/blog/Breadcrumb'
@@ -12,10 +12,6 @@ import { getAppUrl } from '@/lib/app-url'
 import { getSettings } from '@/lib/settings'
 import { readingTimeLabel } from '@/lib/reading-time'
 import { getPostByIdForPreview } from '@/lib/db-queries'
-
-const secret = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? 'fallback-secret-must-change-in-prod-32chars'
-)
 
 /** Texto puro do HTML — usado para contagem de palavras */
 function plainText(html: string): string {
@@ -64,18 +60,8 @@ export async function generateMetadata({
   }
 
   // Valida token antes de buscar dados
-  try {
-    const { payload } = await jwtVerify(token, secret)
-    const postIdFromToken = parseInt(String(payload.sub), 10)
-    const postId = parseInt(params.id, 10)
-
-    if (postIdFromToken !== postId) {
-      return {
-        title: 'Token inválido',
-        robots: { index: false, follow: false },
-      }
-    }
-  } catch {
+  const postIdFromToken = await verifyPreviewToken(token)
+  if (postIdFromToken === null || postIdFromToken !== parseInt(params.id, 10)) {
     return {
       title: 'Token inválido',
       robots: { index: false, follow: false },
@@ -110,15 +96,8 @@ export default async function PreviewPage({
     notFound()
   }
 
-  try {
-    const { payload } = await jwtVerify(token, secret)
-    const postIdFromToken = parseInt(String(payload.sub), 10)
-    const postId = parseInt(params.id, 10)
-
-    if (postIdFromToken !== postId) {
-      notFound()
-    }
-  } catch {
+  const postIdFromToken = await verifyPreviewToken(token)
+  if (postIdFromToken === null || postIdFromToken !== parseInt(params.id, 10)) {
     notFound()
   }
 
