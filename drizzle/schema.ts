@@ -98,10 +98,10 @@ export const siteSettings = pgTable('site_settings', {
 export const apiTokens = pgTable('api_tokens', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
-  // `token` guarda o valor em claro só por compatibilidade com registros
-  // antigos. A verificação é por `token_hash`, e o valor completo só aparece
-  // uma vez, na resposta da criação.
-  token: text('token').unique().notNull(),
+  // `token` só existe por compatibilidade com o código anterior ao hash, e é
+  // limpado assim que esta branch chegar em produção. A verificação é por
+  // `token_hash`, e o valor completo só aparece uma vez, na resposta da criação.
+  token: text('token').unique(),
   token_hash: text('token_hash'),
   token_preview: text('token_preview'),
   active: text('active').notNull().default('true'),

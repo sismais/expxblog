@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS "site_settings" (
 CREATE TABLE IF NOT EXISTS "api_tokens" (
   "id" serial PRIMARY KEY NOT NULL,
   "name" text NOT NULL,
-  "token" text UNIQUE NOT NULL,
+  "token" text UNIQUE,
   "token_hash" text,
   "token_preview" text,
   "active" text NOT NULL DEFAULT 'true',

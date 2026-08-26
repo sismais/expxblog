@@ -47,9 +47,10 @@ export async function POST(request: Request) {
     const token = generateApiToken()
     const [created] = await db
       .insert(apiTokens)
+      // O valor em claro não é gravado. Só o hash, que é o que a verificação
+      // usa, e o preview, que é o que a listagem mostra.
       .values({
         name: parsed.data.name,
-        token,
         token_hash: hashApiToken(token),
         token_preview: previewApiToken(token),
       })

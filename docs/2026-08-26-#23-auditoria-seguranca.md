@@ -157,14 +157,31 @@ sessão de migração. O padrão certo já existe no repo:
 Correção: passar `{ configured: boolean, masked: 'sk-or-…abcd' }` e ter endpoint
 que grava a chave nova sem devolver a atual.
 
-### Coluna `api_tokens.token` em claro, e sem expiração
+### Coluna `api_tokens.token` em claro — falta o último passo
 
-A verificação já é por hash e a listagem já não devolve o valor, mas a coluna
-com o texto puro continua preenchida, e não existe `expires_at`.
+Limpeza autorizada em 26/08/2026, e feita pela metade de propósito. A `master`
+ainda roda `verifyApiToken` buscando por `apiTokens.token`, então limpar a coluna
+antes do deploy derrubaria a API v1 do blog ao vivo na hora.
 
-Limpar exige janela combinada: se o valor for apagado e a integração não tiver
-o token guardado, ela para até alguém gerar outro. Frase que destrava:
-*"pode limpar a coluna token em claro de api_tokens"*.
+Já feito (migration `api_tokens_prepare_clear_plaintext`):
+
+- `token` virou nullable, no banco, no `schema.ts` e no `setup-sql.ts`
+- a criação de token não grava mais o valor em claro, só hash e preview
+- trigger `api_tokens_fill_hash_trg` preenche `token_hash` e `token_preview` em
+  qualquer INSERT. Sem ele, um token criado em produção antes do deploy nasceria
+  sem hash e pararia de funcionar depois. Testado dentro de transação revertida
+
+**Falta rodar, depois que esta branch chegar na `master` e a Vercel publicar:**
+
+```sql
+UPDATE api_tokens SET token = NULL WHERE token IS NOT NULL;
+```
+
+Antes de rodar, confirme que a integração "Hub ExpxAgents — A Ordem da Tinta"
+tem o token guardado do lado dela. Depois disso o valor não existe mais em lugar
+nenhum, e a única saída é gerar outro.
+
+Continua sem `expires_at`.
 
 ### `ssl: { rejectUnauthorized: false }`
 
