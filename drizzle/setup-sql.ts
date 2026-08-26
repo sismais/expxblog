@@ -63,10 +63,14 @@ CREATE TABLE IF NOT EXISTS "api_tokens" (
   "id" serial PRIMARY KEY NOT NULL,
   "name" text NOT NULL,
   "token" text UNIQUE NOT NULL,
+  "token_hash" text,
+  "token_preview" text,
   "active" text NOT NULL DEFAULT 'true',
   "last_used_at" timestamp,
   "created_at" timestamp NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS "api_tokens_token_hash_idx" ON "api_tokens" ("token_hash");
 
 CREATE TABLE IF NOT EXISTS "article_themes" (
   "id" serial PRIMARY KEY NOT NULL,
