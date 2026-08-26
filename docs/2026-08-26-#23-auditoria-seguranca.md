@@ -141,6 +141,21 @@ com o do Postgres.
 tinha divergido: só ela permitia `rel` em `<a>`. O `rel` foi mantido no preset
 central, porque link com `target="_blank"` precisa poder trazer `rel="noopener"`.
 
+### Auth de cron byte a byte, erro cru em rota pública, e um segredo de mentira
+
+Os três endpoints `/api/cron/*` repetiam o mesmo bloco comparando o bearer com
+`!==`, que sai no primeiro byte diferente. `lib/cron-auth.ts` centraliza e usa
+`timingSafeEqual`. Validado em 7 casos, incluindo chave errada de mesmo tamanho.
+
+`/api/track` devolvia `details` com a mensagem do erro numa rota pública sem
+auth — erro de banco cru descreve schema para quem está olhando. Fica só no log.
+
+`CRON_SECRET` era gravada pelo wizard e lida por nenhum código: os crons
+autenticam com a `SUPABASE_SERVICE_ROLE_KEY`. Saiu do wizard, do README e da
+Vercel. Os `docs/2026-05-20-#15` e os planos em `docs/superpowers/` ainda a
+citam, mas são registro do design original com Vercel Cron, que foi trocado por
+pg_cron — ficam como estão.
+
 ## Não corrigido — fica para a próxima
 
 ### Segredos serializados no payload RSC da página de configurações
@@ -195,12 +210,7 @@ não ganharia nada — ele também não valida. A correção real é embarcar o 
 Supabase e usar `{ ca, rejectUnauthorized: true }`, o que adiciona um arquivo
 que expira e pede teste em produção.
 
-### `CRON_SECRET` é variável morta
-
-Confirmado por grep: `app/api/setup/install/route.ts:56` grava, nenhum arquivo
-`.ts` lê. Os endpoints de cron autenticam com `SUPABASE_SERVICE_ROLE_KEY`. Não é
-brecha, é lixo que confunde auditoria futura — a variável tem nome de segredo e
-não protege nada.
+*(o `CRON_SECRET` saiu desta lista — foi resolvido, veja acima)*
 
 ### `rewrite-links.ts` grava HTML sem re-sanitizar
 
