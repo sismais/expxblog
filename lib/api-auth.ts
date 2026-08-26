@@ -18,7 +18,13 @@ export async function verifyApiToken(request: NextRequest): Promise<{ valid: tru
     }
   }
 
-  const [found] = await db.select().from(apiTokens).where(eq(apiTokens.token, token)).limit(1)
+  // Busca pelo hash, não pelo valor. Assim o texto puro deixa de ser
+  // necessário no banco, e nenhuma consulta precisa carregá-lo.
+  const [found] = await db
+    .select()
+    .from(apiTokens)
+    .where(eq(apiTokens.token_hash, hashApiToken(token)))
+    .limit(1)
 
   if (!found || found.active !== 'true') {
     return {
@@ -37,4 +43,15 @@ export async function verifyApiToken(request: NextRequest): Promise<{ valid: tru
 
 export function generateApiToken(): string {
   return `blog_${crypto.randomBytes(32).toString('hex')}`
+}
+
+/** SHA-256 do token. É o que fica no banco, no lugar do valor em claro. */
+export function hashApiToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex')
+}
+
+/** Trecho exibido na listagem: início e fim, o miolo coberto. */
+export function previewApiToken(token: string): string {
+  if (token.length <= 12) return '••••••••'
+  return `${token.slice(0, 8)}••••••••••••${token.slice(-4)}`
 }

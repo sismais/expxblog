@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 import { db } from '@/drizzle/db'
 import { posts, postCategories, postTags } from '@/drizzle/schema'
 import { eq, count, sql, desc } from 'drizzle-orm'
@@ -9,10 +10,6 @@ import { generateSlug } from '@/lib/slug'
 
 export const dynamic = 'force-dynamic'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt'] },
-}
 
 const listSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

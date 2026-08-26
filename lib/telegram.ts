@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 import { db } from '@/drizzle/db'
 import { siteSettings, posts } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
@@ -7,10 +8,6 @@ import { aiChat, callOpenRouterImage, getPromptFromDB } from '@/lib/ai'
 import { generateSlug } from '@/lib/slug'
 import { supabaseAdmin, STORAGE_BUCKET } from '@/lib/supabase-admin'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt'] },
-}
 
 export interface TelegramConfig {
   bot_token: string
@@ -160,8 +157,7 @@ JSON válido (sem markdown):
       slug,
       content: cleanContent,
       excerpt: articleData.excerpt ?? '',
-      status: 'published',
-      published_at: now,
+      status: 'draft',
       updated_at: now,
     })
     .returning()

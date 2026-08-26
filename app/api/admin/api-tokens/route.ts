@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { db } from '@/drizzle/db'
 import { apiTokens } from '@/drizzle/schema'
 import { desc } from 'drizzle-orm'
-import { generateApiToken } from '@/lib/api-auth'
+import { generateApiToken, hashApiToken, previewApiToken } from '@/lib/api-auth'
 
 const createSchema = z.object({
   name: z.string().min(1, 'Nome obrigatório').max(100),
@@ -11,11 +11,14 @@ const createSchema = z.object({
 
 export async function GET() {
   try {
+    // Devolve só o preview. Antes vinha o bearer completo de todos os tokens
+    // em toda listagem, então qualquer leitura indevida do painel levava as
+    // integrações junto.
     const all = await db
       .select({
         id: apiTokens.id,
         name: apiTokens.name,
-        token: apiTokens.token,
+        token: apiTokens.token_preview,
         active: apiTokens.active,
         last_used_at: apiTokens.last_used_at,
         created_at: apiTokens.created_at,
@@ -44,10 +47,24 @@ export async function POST(request: Request) {
     const token = generateApiToken()
     const [created] = await db
       .insert(apiTokens)
-      .values({ name: parsed.data.name, token })
-      .returning()
+      // O valor em claro não é gravado. Só o hash, que é o que a verificação
+      // usa, e o preview, que é o que a listagem mostra.
+      .values({
+        name: parsed.data.name,
+        token_hash: hashApiToken(token),
+        token_preview: previewApiToken(token),
+      })
+      .returning({
+        id: apiTokens.id,
+        name: apiTokens.name,
+        active: apiTokens.active,
+        last_used_at: apiTokens.last_used_at,
+        created_at: apiTokens.created_at,
+      })
 
-    return NextResponse.json({ token: created }, { status: 201 })
+    // Única vez que o valor completo sai do servidor — a tela já avisa para
+    // copiar agora.
+    return NextResponse.json({ token: { ...created, token } }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }

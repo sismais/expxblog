@@ -62,11 +62,15 @@ CREATE TABLE IF NOT EXISTS "site_settings" (
 CREATE TABLE IF NOT EXISTS "api_tokens" (
   "id" serial PRIMARY KEY NOT NULL,
   "name" text NOT NULL,
-  "token" text UNIQUE NOT NULL,
+  "token" text UNIQUE,
+  "token_hash" text,
+  "token_preview" text,
   "active" text NOT NULL DEFAULT 'true',
   "last_used_at" timestamp,
   "created_at" timestamp NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS "api_tokens_token_hash_idx" ON "api_tokens" ("token_hash");
 
 CREATE TABLE IF NOT EXISTS "article_themes" (
   "id" serial PRIMARY KEY NOT NULL,
@@ -217,4 +221,28 @@ CREATE INDEX IF NOT EXISTS "ai_request_logs_created_at_idx" ON "ai_request_logs"
 CREATE INDEX IF NOT EXISTS "ai_request_logs_feature_idx" ON "ai_request_logs" ("feature");
 CREATE INDEX IF NOT EXISTS "ai_request_logs_model_idx" ON "ai_request_logs" ("model");
 CREATE INDEX IF NOT EXISTS "ai_request_logs_status_idx" ON "ai_request_logs" ("status");
+
+-- Row Level Security em todas as tabelas.
+-- Sem policy nenhuma: fecha os roles anon e authenticated do PostgREST.
+-- O app nao e afetado porque fala com o banco por DATABASE_URL (role postgres,
+-- via Drizzle) e por service role key no Storage, e ambos passam por cima do RLS.
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "categories" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "post_categories" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "post_tags" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "site_settings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "api_tokens" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "article_themes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "page_views" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "newsletter_subscribers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "automation_config" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "agent_configs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "rss_feeds" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "rss_processed_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "automation_logs" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "source_crawlers" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "source_crawler_items" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ai_request_logs" ENABLE ROW LEVEL SECURITY;
 `

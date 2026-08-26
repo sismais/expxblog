@@ -1,5 +1,5 @@
 import { db } from '@/drizzle/db'
-import { posts, postCategories, categories, tags, postTags } from '@/drizzle/schema'
+import { posts, postCategories, categories, tags, postTags, pageViews } from '@/drizzle/schema'
 import { eq, and, asc, desc, count, inArray, notInArray, sql } from 'drizzle-orm'
 
 export async function getPostsPage(params: {
@@ -136,6 +136,68 @@ export async function getAllCategories() {
   }
 }
 
+export async function getCategoriesWithCount() {
+  try {
+    const result = await db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        slug: categories.slug,
+        postCount: count(postCategories.post_id),
+      })
+      .from(categories)
+      .leftJoin(postCategories, eq(postCategories.category_id, categories.id))
+      .leftJoin(posts, and(eq(posts.id, postCategories.post_id), eq(posts.status, 'published')))
+      .groupBy(categories.id)
+      .having(sql`count(${posts.id}) > 0`)
+      .orderBy(desc(sql`count(${posts.id})`), asc(categories.name))
+
+    return result.filter((c) => c.postCount > 0)
+  } catch {
+    return []
+  }
+}
+
+export async function getMostViewedPosts(days = 30, limit = 5) {
+  try {
+    const viewCounts = await db
+      .select({
+        path: pageViews.path,
+        viewCount: count(pageViews.id),
+      })
+      .from(pageViews)
+      // O placeholder tem que ficar FORA do literal. Dentro de INTERVAL '...'
+      // ele virava o texto `$1 days` e o bind nunca acontecia, o que abriria
+      // injeção no dia em que `days` viesse de searchParams.
+      .where(sql`${pageViews.visited_at} >= NOW() - (${days} * INTERVAL '1 day')`)
+      .groupBy(pageViews.path)
+      .orderBy(desc(count(pageViews.id)))
+      .limit(limit)
+
+    const paths = viewCounts.map((v) => v.path)
+    const slugs = paths
+      .filter((p) => p.startsWith('/') && p !== '/' && !p.startsWith('/categoria') && !p.startsWith('/tag'))
+      .map((p) => p.replace(/^\//, ''))
+
+    if (slugs.length === 0) {
+      return []
+    }
+
+    const postsResult = await db
+      .select()
+      .from(posts)
+      .where(and(eq(posts.status, 'published'), inArray(posts.slug, slugs)))
+
+    return postsResult.sort((a, b) => {
+      const aIndex = slugs.indexOf(a.slug)
+      const bIndex = slugs.indexOf(b.slug)
+      return aIndex - bIndex
+    })
+  } catch {
+    return []
+  }
+}
+
 /**
  * Artigos relacionados: mesmos assuntos primeiro, completando com os mais
  * recentes quando não há relacionados suficientes.
@@ -183,6 +245,38 @@ export async function getRelatedPosts(params: {
     return related
   } catch {
     return []
+  }
+}
+
+/**
+ * Busca post por ID para preview — retorna em qualquer status (draft ou published)
+ * com categorias e tags carregadas. Usado apenas em preview admin.
+ */
+export async function getPostByIdForPreview(postId: number) {
+  try {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
+    if (!post) return null
+
+    const [postCats, postTagsList] = await Promise.all([
+      db
+        .select({ category: categories })
+        .from(postCategories)
+        .innerJoin(categories, eq(postCategories.category_id, categories.id))
+        .where(eq(postCategories.post_id, post.id)),
+      db
+        .select({ tag: tags })
+        .from(postTags)
+        .innerJoin(tags, eq(postTags.tag_id, tags.id))
+        .where(eq(postTags.post_id, post.id)),
+    ])
+
+    return {
+      ...post,
+      categories: postCats.map((r) => r.category),
+      tags: postTagsList.map((r) => r.tag),
+    }
+  } catch {
+    return null
   }
 }
 

@@ -12,8 +12,9 @@ alwaysApply: true
 
 ## HTML e injeção
 - Todo HTML fornecido pelo usuário ou gerado por IA **deve** passar por `sanitize-html` antes de ser persistido
-- Preset em uso: `sanitizeHtml.defaults.allowedTags` + `['h2','h3','img']`, com `img: ['src','alt']` nos atributos — qualquer outra tag é stripped
-- Esse preset está duplicado em `app/api/admin/posts/route.ts`, `app/api/admin/posts/[id]/route.ts`, `app/api/admin/ai/article/generate/route.ts` e `.../generate-from-url/route.ts` — ao mudar um, mude os quatro
+- Preset em uso: `lib/sanitize.ts` (`sanitizeOptions` / `sanitizePostHtml`) — `sanitizeHtml.defaults.allowedTags` + `['h2','h3','img']`, com `img: ['src','alt']` e `a: ['href','name','target','rel']`; qualquer outra tag é stripped
+- **Fonte única.** Importe de `@/lib/sanitize`, nunca redeclare o preset num arquivo novo. Cópia solta envelhece e vira buraco: até 26/08/2026 havia dez, e a de `lib/agents/publisher.ts` já tinha divergido das outras
+- Ainda com cópia própria, a migrar quando a branch de migração fechar: `scripts/import-wp.ts` e `scripts/migracao-wp/refresh-content.ts`
 - Nunca use `.innerHTML` sem sanitização em componentes React — use `dangerouslySetInnerHTML` apenas com output já sanitizado
 
 ## Imagens remotas

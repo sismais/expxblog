@@ -56,6 +56,11 @@ const putSchema = z.object({
       allowed_chat_ids: z.string().max(500).optional(),
     })
     .optional(),
+  automation: z
+    .object({
+      publish_status: z.enum(['draft', 'published']).optional(),
+    })
+    .optional(),
   firecrawl: z
     .object({
       api_key: z.string().optional(),
@@ -194,6 +199,12 @@ export async function PUT(request: Request) {
           ? JSON.parse(rows[0].value)
           : { bot_token: '', allowed_chat_ids: '' }
       await upsertSetting('telegram_config', JSON.stringify({ ...existing, ...telegram }))
+    }
+
+    if (parsed.data.automation !== undefined) {
+      if (parsed.data.automation.publish_status !== undefined) {
+        await upsertSetting('automation_publish_status', parsed.data.automation.publish_status)
+      }
     }
 
     const current = await getSettings()

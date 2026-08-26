@@ -4,14 +4,8 @@ import { db } from '@/drizzle/db'
 import { posts } from '@/drizzle/schema'
 import { generateSlug } from '@/lib/slug'
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: {
-    ...sanitizeHtml.defaults.allowedAttributes,
-    img: ['src', 'alt'],
-  },
-}
 
 async function fetchUrlContent(url: string): Promise<string> {
   const response = await fetch(url, {

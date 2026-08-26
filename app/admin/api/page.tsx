@@ -111,11 +111,6 @@ export default function AdminApiPage() {
     setToast({ type: 'success', msg: 'Token copiado para a área de transferência!' })
   }
 
-  function maskToken(token: string): string {
-    if (token.length <= 12) return '••••••••'
-    return token.substring(0, 8) + '••••••••••••' + token.substring(token.length - 4)
-  }
-
   function formatDate(dateStr: string | null): string {
     if (!dateStr) return 'Nunca'
     return new Date(dateStr).toLocaleString('pt-BR')
@@ -213,7 +208,9 @@ export default function AdminApiPage() {
                     <td className="py-3 px-3 font-medium text-neutral-900">{token.name}</td>
                     <td className="py-3 px-3">
                       <code className="text-xs font-mono text-gray-500">
-                        {token.isNew ? revealedToken : maskToken(token.token)}
+                        {/* A listagem já vem mascarada do servidor; o valor
+                            completo só existe no momento da criação. */}
+                        {token.isNew ? revealedToken : token.token}
                       </code>
                     </td>
                     <td className="py-3 px-3">
