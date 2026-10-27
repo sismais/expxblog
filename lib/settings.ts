@@ -78,6 +78,7 @@ export interface CompanyInfo {
   social_instagram: string
   social_twitter: string
   social_youtube: string
+  download_url: string
 }
 
 export interface NewsletterConfig {
@@ -120,9 +121,9 @@ const COLOR_DEFAULTS: Record<string, ThemeColors> = {
     surface: '#FFFFFF',
   },
   news: {
-    primary: '#003580',
-    secondary: '#E8002D',
-    background: '#F2F2F2',
+    primary: '#10293F',
+    secondary: '#45E5E5',
+    background: '#FFFFFF',
     surface: '#FFFFFF',
   },
   tech: {
@@ -173,6 +174,7 @@ export const DEFAULT_COMPANY: CompanyInfo = {
   social_instagram: '',
   social_twitter: '',
   social_youtube: '',
+  download_url: 'https://gestaomaissimples.com.br',
 }
 
 export const getSettings = cache(async (): Promise<SiteSettings> => {

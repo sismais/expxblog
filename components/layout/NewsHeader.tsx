@@ -1,12 +1,22 @@
 import Link from 'next/link'
 import { SearchBar } from '@/components/blog/SearchBar'
 import { db } from '@/drizzle/db'
-import { categories } from '@/drizzle/schema'
-import { asc } from 'drizzle-orm'
+import { categories, posts, postCategories } from '@/drizzle/schema'
+import { asc, eq, and } from 'drizzle-orm'
 
 async function getCategories() {
   try {
-    return db.select().from(categories).orderBy(asc(categories.name))
+    return db.selectDistinct({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+      description: categories.description,
+    })
+    .from(categories)
+    .innerJoin(postCategories, eq(postCategories.category_id, categories.id))
+    .innerJoin(posts, eq(posts.id, postCategories.post_id))
+    .where(eq(posts.status, 'published'))
+    .orderBy(asc(categories.name))
   } catch {
     return []
   }

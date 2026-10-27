@@ -71,10 +71,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true })
   } catch (error) {
+    // Rota pública e sem auth: a mensagem do erro fica no log, nunca na
+    // resposta. Erro de banco cru descreve schema para quem estiver olhando.
     console.error('Track error:', error)
-    return NextResponse.json({ 
-      error: 'Internal error', 
-      details: error instanceof Error ? error.message : String(error) 
-    }, { status: 500 })
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

@@ -45,15 +45,16 @@ export async function POST(req: NextRequest) {
 
     // 4. Gerar secrets
     const jwtSecret = randomBytes(32).toString('base64')
-    const cronSecret = randomBytes(32).toString('base64')
 
-    // 5. Salvar env vars na Vercel
+    // 5. Salvar env vars na Vercel.
+    // Não existe CRON_SECRET: os endpoints /api/cron/* autenticam com a
+    // SUPABASE_SERVICE_ROLE_KEY (lib/cron-auth.ts). O wizard gravava essa
+    // variável e nenhum código lia — segredo de mentira confunde auditoria.
     const envVars = [
       { key: 'DATABASE_URL', value: databaseUrl, type: 'encrypted', target: ['production', 'preview'] },
       { key: 'NEXT_PUBLIC_SUPABASE_URL', value: supabaseUrl, type: 'plain', target: ['production', 'preview'] },
       { key: 'SUPABASE_SERVICE_ROLE_KEY', value: serviceRoleKey, type: 'encrypted', target: ['production', 'preview'] },
       { key: 'JWT_SECRET', value: jwtSecret, type: 'encrypted', target: ['production', 'preview'] },
-      { key: 'CRON_SECRET', value: cronSecret, type: 'encrypted', target: ['production', 'preview'] },
     ]
 
     const teamParam = teamId ? `?teamId=${teamId}` : ''

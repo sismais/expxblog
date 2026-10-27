@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin, STORAGE_BUCKET } from '@/lib/supabase-admin'
+import { checkPublicUrl } from '@/lib/safe-url'
+import { inspectImage } from '@/lib/upload-guard'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif']
 const MAX_SIZE = 2 * 1024 * 1024
 
 export async function POST(request: Request) {
@@ -15,16 +16,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Campo "url" é obrigatório' }, { status: 400 })
     }
 
-    let parsedUrl: URL
-    try {
-      parsedUrl = new URL(rawUrl)
-    } catch {
-      return NextResponse.json({ error: 'URL inválida' }, { status: 400 })
+    const checked = await checkPublicUrl(rawUrl)
+    if (!checked.ok) {
+      return NextResponse.json({ error: checked.error }, { status: 400 })
     }
-
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      return NextResponse.json({ error: 'Apenas URLs http/https são permitidas' }, { status: 400 })
-    }
+    const parsedUrl = checked.url
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
@@ -43,31 +39,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não foi possível baixar a imagem' }, { status: 502 })
     }
 
-    const contentType = imgRes.headers.get('content-type')?.split(';')[0].trim() ?? ''
-
-    // SVGs served as text/html or text/plain still need to be accepted if URL ends in .svg
-    const isSvgUrl = /\.svg(\?.*)?$/i.test(parsedUrl.pathname)
-    const effectiveType = isSvgUrl && !ALLOWED_TYPES.includes(contentType) ? 'image/svg+xml' : contentType
-
-    if (!ALLOWED_TYPES.includes(effectiveType)) {
-      return NextResponse.json(
-        { error: `Formato não suportado (${contentType}). Use PNG, JPG, SVG ou WebP.` },
-        { status: 422 }
-      )
-    }
-
-    const bytes = await imgRes.arrayBuffer()
+    const bytes = new Uint8Array(await imgRes.arrayBuffer())
 
     if (bytes.byteLength > MAX_SIZE) {
       return NextResponse.json({ error: 'Imagem maior que 2MB' }, { status: 422 })
     }
 
-    const ext = isSvgUrl ? '.svg' : (effectiveType === 'image/png' ? '.png' : effectiveType === 'image/jpeg' ? '.jpg' : effectiveType === 'image/webp' ? '.webp' : '.img')
-    const filename = `logo-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`
+    // Antes o tipo saía do Content-Type do servidor remoto, e a URL terminando
+    // em .svg forçava image/svg+xml mesmo contra a resposta. Os dois são
+    // controlados por quem hospeda a imagem. Agora vale o conteúdo baixado, e
+    // SVG com script é recusado.
+    const inspected = inspectImage(bytes)
+    if (!inspected.ok) {
+      return NextResponse.json({ error: inspected.error }, { status: 422 })
+    }
+
+    const filename = `logo-${Date.now()}-${Math.random().toString(36).slice(2)}${inspected.ext}`
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(STORAGE_BUCKET)
-      .upload(filename, Buffer.from(bytes), { contentType: effectiveType })
+      .upload(filename, Buffer.from(bytes), { contentType: inspected.kind })
 
     if (uploadError) {
       console.error('[fetch-logo] upload error:', uploadError)

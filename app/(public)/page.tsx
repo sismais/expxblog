@@ -15,6 +15,7 @@ import { CategorySection } from '@/components/blog/CategorySection'
 import { NewsSidebar } from '@/components/blog/NewsSidebar'
 import { TechHero } from '@/components/blog/TechHero'
 import { PostCardTech } from '@/components/blog/PostCardTech'
+import { PostCardNews } from '@/components/blog/PostCardNews'
 import { db } from '@/drizzle/db'
 import { posts, postCategories, categories, tags } from '@/drizzle/schema'
 import { eq, desc, and, asc } from 'drizzle-orm'
@@ -52,50 +53,6 @@ type NewsPost = {
   cover_image: string | null
   published_at: string | null
   categories: { id: number; name: string; slug: string }[]
-}
-
-async function getNewsSections(): Promise<
-  { category: { id: number; name: string; slug: string }; posts: NewsPost[] }[]
-> {
-  try {
-    const cats = await db.select().from(categories).orderBy(asc(categories.name))
-    const sections = await Promise.all(
-      cats.map(async (cat) => {
-        const rows = await db
-          .select({ post: posts })
-          .from(posts)
-          .innerJoin(postCategories, eq(postCategories.post_id, posts.id))
-          .where(
-            and(
-              eq(posts.status, 'published'),
-              eq(postCategories.category_id, cat.id)
-            )
-          )
-          .orderBy(desc(posts.published_at))
-          .limit(3)
-
-        const postsWithCats = await Promise.all(
-          rows.map(async ({ post: p }) => {
-            const catRows = await db
-              .select({ category: categories })
-              .from(postCategories)
-              .innerJoin(categories, eq(categories.id, postCategories.category_id))
-              .where(eq(postCategories.post_id, p.id))
-              .limit(3)
-            return {
-              ...p,
-              published_at: p.published_at?.toISOString() ?? null,
-              categories: catRows.map((r) => r.category),
-            }
-          })
-        )
-        return { category: cat, posts: postsWithCats }
-      })
-    )
-    return sections.filter((s) => s.posts.length > 0)
-  } catch {
-    return []
-  }
 }
 
 async function getTechHeroPosts(): Promise<NewsPost[]> {
@@ -137,7 +94,7 @@ export default async function HomePage({
   const pageLimit =
     template === 'portal' ? '13' :
     template === 'business' ? '12' :
-    template === 'news' ? '0' :
+    template === 'news' ? '10' :
     template === 'tech' ? '10' :
     '9'
   const [postsData, categoriesData] = await Promise.all([
@@ -159,52 +116,53 @@ export default async function HomePage({
   }
 
   if (template === 'news') {
-    const [sections, allTags] = await Promise.all([
-      getNewsSections(),
-      db.select().from(tags).limit(20).catch(() => [] as typeof tags.$inferSelect[]),
-    ])
+    const blogName = company.blog_name || process.env.NEXT_PUBLIC_BLOG_NAME || 'Blog'
+    const postsWithDates = postsData.posts.map((p) => ({
+      ...p,
+      published_at: p.published_at?.toISOString() ?? null,
+    }))
+
+    const [leadPost, ...listPosts] = postsWithDates
+    const showLead = Boolean(leadPost)
+
     return (
       <div>
-        {(sections.length > 0 || allTags.length > 0) && (
-          <div className="mb-8 pb-6 border-b border-gray-100 space-y-3">
-            {sections.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {sections.map(({ category }) => (
-                  <a
-                    key={category.id}
-                    href={`#${category.slug}`}
-                    className="px-3 py-1.5 text-xs font-bold uppercase tracking-wide rounded-full border transition-colors hover:bg-[var(--color-primary)] hover:text-white"
-                    style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
-                  >
-                    {category.name}
-                  </a>
-                ))}
-              </div>
-            )}
-            {allTags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {allTags.map((tag) => (
-                  <a
-                    key={tag.id}
-                    href={`/tag/${tag.slug}`}
-                    className="text-xs font-medium px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] transition-colors"
-                  >
-                    {tag.name}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <div className="mb-8 max-w-2xl">
+          <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 mb-2">
+            {blogName}
+          </h1>
+          {company.blog_description && (
+            <p className="text-gray-600 leading-relaxed">{company.blog_description}</p>
+          )}
+        </div>
+
         <div className="flex gap-8">
           <div className="flex-1 min-w-0">
-            {sections.length === 0 && (
+            {postsWithDates.length === 0 && (
               <p className="text-gray-500">Nenhum post publicado ainda.</p>
             )}
-            {sections.map(({ category, posts: sectionPosts }) => (
-              <CategorySection key={category.id} category={category} posts={sectionPosts} />
-            ))}
+
+            {showLead && (
+              <div className="mb-8">
+                <PostCardNews post={leadPost} variant="lead" />
+              </div>
+            )}
+
+            {listPosts.length > 0 && (
+              <div className="space-y-6">
+                {listPosts.map((post) => (
+                  <div key={post.id} className="border-b border-gray-100 pb-6 last:border-0">
+                    <PostCardNews post={post} variant="horizontal" />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Suspense>
+              <Pagination currentPage={postsData.page} totalPages={postsData.pages} />
+            </Suspense>
           </div>
+
           <div className="hidden lg:block w-72 shrink-0">
             <div className="sticky top-24">
               <NewsSidebar />

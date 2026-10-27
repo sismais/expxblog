@@ -97,7 +97,7 @@ Regras que o código não deixa óbvias:
 
 ### Conteúdo e sanitização
 
-O corpo do post é HTML do TipTap (`components/blog/TiptapEditor.tsx`) ou saída da IA. Toda escrita passa por `sanitize-html` com o preset usado no projeto: `sanitizeHtml.defaults.allowedTags` + `['h2','h3','img']`, e `img: ['src','alt']` nos atributos. O mesmo preset está repetido em quatro rotas (`admin/posts`, `admin/posts/[id]`, `ai/article/generate`, `ai/article/generate-from-url`) — se mexer numa, mexa nas quatro. Slug sempre via `lib/slug.ts`.
+O corpo do post é HTML do TipTap (`components/blog/TiptapEditor.tsx`) ou saída da IA. Toda escrita passa por `sanitize-html` com o preset de `lib/sanitize.ts` (`sanitizeOptions` / `sanitizePostHtml`): `sanitizeHtml.defaults.allowedTags` + `['h2','h3','img']`, com `img: ['src','alt']` e `a: ['href','name','target','rel']` nos atributos. **Esse módulo é a fonte única — nunca redeclare o preset num arquivo novo.** Os dois scripts de migração (`scripts/import-wp.ts`, `scripts/migracao-wp/refresh-content.ts`) ainda têm cópia própria e devem migrar quando a branch de migração fechar. Slug sempre via `lib/slug.ts`.
 
 Na renderização pública o HTML entra por `dangerouslySetInnerHTML` com `prose prose-lg font-serif` — o conteúdo já vem sanitizado do banco.
 

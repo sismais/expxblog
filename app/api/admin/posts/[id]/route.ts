@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import sanitizeHtml from 'sanitize-html'
+import { sanitizeOptions } from '@/lib/sanitize'
 import { db } from '@/drizzle/db'
 import { posts, postCategories, postTags, categories, tags } from '@/drizzle/schema'
 import { eq } from 'drizzle-orm'
 
-const sanitizeOptions: sanitizeHtml.IOptions = {
-  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['h2', 'h3', 'img']),
-  allowedAttributes: { ...sanitizeHtml.defaults.allowedAttributes, img: ['src', 'alt'] },
-}
 
 function parseId(id: string): number | null {
   const n = parseInt(id, 10)

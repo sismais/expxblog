@@ -22,11 +22,21 @@ export async function PATCH(
       return NextResponse.json({ error: 'Campo "active" (boolean) obrigatório' }, { status: 400 })
     }
 
+    // `.returning()` sem colunas traria o token em claro de volta pro cliente,
+    // e o `token` daqui alimenta a mesma linha da listagem — tem que vir no
+    // formato mascarado.
     const [updated] = await db
       .update(apiTokens)
       .set({ active })
       .where(eq(apiTokens.id, id))
-      .returning()
+      .returning({
+        id: apiTokens.id,
+        name: apiTokens.name,
+        token: apiTokens.token_preview,
+        active: apiTokens.active,
+        last_used_at: apiTokens.last_used_at,
+        created_at: apiTokens.created_at,
+      })
 
     if (!updated) {
       return NextResponse.json({ error: 'Token não encontrado' }, { status: 404 })

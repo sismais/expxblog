@@ -180,7 +180,8 @@ As rotas `/api/setup/*` retornam 403 automaticamente se `DATABASE_URL` já estiv
 
 - JWT armazenado em cookie `httpOnly` com duração de 24h.
 - Login tem rate limiting: 5 tentativas por IP a cada 15 minutos.
-- `JWT_SECRET` e `CRON_SECRET` são gerados automaticamente pelo wizard com `crypto.randomBytes`.
+- `JWT_SECRET` é gerado automaticamente pelo wizard com `crypto.randomBytes`, com mínimo de 32 caracteres.
+- Os endpoints `/api/cron/*` autenticam com a `SUPABASE_SERVICE_ROLE_KEY` (`lib/cron-auth.ts`), não com variável própria.
 
 ### Banco de dados
 
